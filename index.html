@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Feedback Analysis App v2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Training Feedback Analysis App</h1>
+            <p class="text-gray-600">Comprehensive feedback collection and analysis system</p>
+        </div>
+
+        <!-- Admin Status -->
+        <div id="admin-status" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div class="flex justify-between items-center">
+                <span>Logged in as: <strong id="admin-email"></strong></span>
+                <button onclick="adminLogout()" class="text-green-600 hover:text-green-800 font-medium">Logout</button>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-white rounded-lg shadow-md p-1">
+                <button onclick="showSection('form')" id="form-btn" class="px-6 py-2 rounded-md bg-blue-500 text-white font-medium">Submit Feedback</button>
+                <button onclick="showSection('analysis')" id="analysis-btn" class="px-6 py-2 rounded-md bg-green-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">AI Analysis</button>
+                <button onclick="showSection('dashboard')" id="dashboard-btn" class="px-6 py-2 rounded-md bg-purple-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Dashboard</button>
+                <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Student Feedback</button>
+                <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
+            </div>
+        </div>
+
+        <!-- Admin Login Section -->
+        <div id="admin-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Login</h2>
+            <form id="admin-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="admin-email-input" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter admin email">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="admin-password-input" required class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter admin password">
+                        <button type="button" onclick="togglePasswordVisibility('admin-password-input')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-r-md transition-colors duration-200">
+                            <span id="admin-password-eye">👁 Show</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                    Login
+                </button>
+            </form>
+            <div id="admin-login-status" class="mt-4"></div>
+        </div>
+
+        <!-- Feedback Form Section -->
+        <div id="form-section" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Submit Training Feedback</h2>
+            
+            <form id="feedback-form" class="space-y-6">
+                <!-- Training Details -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
+                        <input type="text" id="training_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Student Name *</label>
+                        <input type="text" id="student_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Trainer Name *</label>
+                        <select id="trainer_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Trainer</option>
+                            <option value="Amit Choudhary">Amit Choudhary</option>
+                            <option value="Lijin">Lijin</option>
+                            <option value="Snehasis Guha">Snehasis Guha</option>
+                            <option value="Nitesh Dhar Badgayan">Nitesh Dhar Badgayan</option>
+                            <option value="Jagadish GS">Jagadish GS</option>
+                            <option value="Shalini Kanagasabhapathy">Shalini Kanagasabhapathy</option>
+                            <option value="Rajeev Anwar">Rajeev Anwar</option>
+                            <option value="Devang Sareen">Devang Sareen</option>
+                            <option value="Mohan Reddy">Mohan Reddy</option>
+                            <option value="Ayushman Ghosh">Ayushman Ghosh</option>
+                            <option value="Siddharth">Siddharth</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Training Date From *</label>
+                        <input type="date" id="training_date_from" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Training Date To *</label>
+                        <input type="date" id="training_date_to" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Quantitative Ratings -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Quantitative Ratings (1-5 scale)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Content Quality</label>
+                            <select id="content_quality" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Trainer Effectiveness</label>
+                            <select id="trainer_effectiveness" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Clarity of Explanation</label>
+                            <select id="clarity_explanation" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Engagement & Interaction</label>
+                            <select id="engagement_interaction" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Practical Relevance</label>
+                            <select id="practical_relevance" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Learning Materials Quality</label>
+                            <select id="learning_materials_quality" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Session Organization</label>
+                            <select id="session_organization" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Time Management</label>
+                            <select id="time_management" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Technical Support</label>
+                            <select id="technical_support" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Learning Environment</label>
+                            <select id="learning_environment" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Follow-up Support</label>
+                            <select id="follow_up_support" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Overall Satisfaction</label>
+                            <select id="overall_satisfaction" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Communication Skills</label>
+                            <select id="communication_skills" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subject Matter Expertise</label>
+                            <select id="subject_matter_expertise" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Problem Solving Approach</label>
+                            <select id="problem_solving_approach" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Real-world Examples</label>
+                            <select id="real_world_examples" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Hands-on Practice</label>
+                            <select id="hands_on_practice" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="1">1 - Poor</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="3">3 - Good</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="5">5 - Excellent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Qualitative Questions -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Qualitative Feedback</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">General Feedback *</label>
+                            <textarea id="general_feedback" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Please share your overall experience with this training session..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Learning Outcomes *</label>
+                            <textarea id="learning_outcomes" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="What did you learn from this training? How will it help you in your work?"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Practical Application (Optional)</label>
+                            <textarea id="practical_application" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="How do you plan to apply what you learned in your daily work? (Optional)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Trainer Feedback (Optional)</label>
+                            <textarea id="trainer_feedback" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Please provide specific feedback about the trainer's performance... (Optional)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Suggestions for Improvement (Optional)</label>
+                            <textarea id="suggestions_improvement" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="What suggestions do you have to improve future training sessions? (Optional)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Open-Ended Feedback (Optional)</label>
+                            <textarea id="open_ended_feedback" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any additional comments, concerns, or suggestions? (Optional)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                    Submit Feedback
+                </button>
+            </form>
+
+            <div id="form-status" class="mt-4"></div>
+        </div>
+
+        <!-- AI Analysis Section -->
+        <div id="analysis-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">AI-Powered Training Analysis</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Training ID</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="training_analysis_id" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter training ID">
+                    <button onclick="analyzeTrainingFeedback()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Analyze Training Feedback</button>
+                </div>
+            </div>
+
+            <div id="training-analysis-results" class="hidden">
+                <div id="training-analysis-content"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Trainer Performance Dashboard</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Trainer</label>
+                    <select id="dashboard_trainer" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select Trainer</option>
+                        <option value="Amit Choudhary">Amit Choudhary</option>
+                        <option value="Lijin">Lijin</option>
+                        <option value="Snehasis Guha">Snehasis Guha</option>
+                        <option value="Nitesh Dhar Badgayan">Nitesh Dhar Badgayan</option>
+                        <option value="Jagadish GS">Jagadish GS</option>
+                        <option value="Shalini Kanagasabhapathy">Shalini Kanagasabhapathy</option>
+                        <option value="Rajeev Anwar">Rajeev Anwar</option>
+                        <option value="Devang Sareen">Devang Sareen</option>
+                        <option value="Mohan Reddy">Mohan Reddy</option>
+                        <option value="Ayushman Ghosh">Ayushman Ghosh</option>
+                        <option value="Siddharth">Siddharth</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Training ID (Optional)</label>
+                    <input type="text" id="dashboard_training_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter specific training ID">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date Range (Optional)</label>
+                    <div class="flex space-x-2">
+                        <input type="date" id="date_from" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="From Date">
+                        <input type="date" id="date_to" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="To Date">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="generateTrainerDashboard()" class="w-full bg-purple-500 text-white py-3 px-4 rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium mb-4">
+                Generate Trainer Dashboard
+            </button>
+
+            <div id="dashboard-analysis-results" class="hidden">
+                <div id="dashboard-analysis-content"></div>
+            </div>
+        </div>
+
+        <!-- Student Feedback Section (Admin Only) -->
+        <div id="student-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Student Feedback Viewer (Admin Only)</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Training ID</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="student_training_id" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter training ID">
+                    <button onclick="loadStudentFeedback()" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">Load Student Feedback</button>
+                    <button onclick="downloadExcel()" id="download-excel-btn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Excel</button>
+                </div>
+            </div>
+
+            <div id="student-feedback-results" class="hidden">
+                <div id="student-feedback-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+
+        // Show section function
+        function showSection(section) {
+            // Check if trying to access admin-protected sections
+            if (['analysis', 'dashboard', 'student'].includes(section)) {
+                if (!isAdminLoggedIn()) {
+                    alert('Please login as admin to access this section');
+                    return;
+                }
+            }
+            
+            // Hide all sections
+            document.getElementById('form-section').classList.add('hidden');
+            document.getElementById('analysis-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('student-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
+            
+            // Show selected section
+            document.getElementById(section + '-section').classList.remove('hidden');
+        }
+
+        // Check admin authentication status
+        async function checkAdminStatus() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/admin/status`);
+                if (response.data.success) {
+                    showAdminStatus(response.data.admin_email);
+                    enableAdminFeatures();
+                } else {
+                    hideAdminStatus();
+                    disableAdminFeatures();
+                }
+            } catch (error) {
+                hideAdminStatus();
+                disableAdminFeatures();
+            }
+        }
+
+        // Show admin status
+        function showAdminStatus(email) {
+            document.getElementById('admin-status').classList.remove('hidden');
+            document.getElementById('admin-email').textContent = email;
+        }
+
+        // Hide admin status
+        function hideAdminStatus() {
+            document.getElementById('admin-status').classList.add('hidden');
+        }
+
+        // Enable admin features
+        function enableAdminFeatures() {
+            document.getElementById('analysis-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('dashboard-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('student-feedback-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Disable admin features
+        function disableAdminFeatures() {
+            document.getElementById('analysis-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('dashboard-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('student-feedback-btn').classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Check if admin is logged in
+        function isAdminLoggedIn() {
+            return !document.getElementById('analysis-btn').classList.contains('opacity-50');
+        }
+
+        // Admin login
+        async function adminLogin(email, password) {
+            try {
+                const response = await axios.post(`${API_BASE_URL}/admin/login`, {
+                    email: email,
+                    password: password
+                });
+                
+                if (response.data.success) {
+                    showAdminStatus(response.data.admin_email);
+                    enableAdminFeatures();
+                    showStatus('admin-login-status', 'success', 'Admin login successful!');
+                    document.getElementById('admin-login-form').reset();
+                    showSection('form'); // Redirect to main form
+                } else {
+                    showStatus('admin-login-status', 'error', response.data.message);
+                }
+            } catch (error) {
+                showStatus('admin-login-status', 'error', 'Login failed: ' + error.message);
+            }
+        }
+
+        // Admin logout
+        async function adminLogout() {
+            try {
+                await axios.post(`${API_BASE_URL}/admin/logout`);
+                hideAdminStatus();
+                disableAdminFeatures();
+                showSection('form'); // Redirect to main form
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Admin login form
+        document.getElementById('admin-login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('admin-email-input').value;
+            const password = document.getElementById('admin-password-input').value;
+            
+            await adminLogin(email, password);
+        });
+
+        // Toggle password visibility
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(inputId.replace('-input', '-eye'));
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.textContent = '🙈 Hide';
+            } else {
+                input.type = 'password';
+                eyeIcon.textContent = '👁 Show';
+            }
+        }
+
+        // Generate trainer dashboard with trend analysis
+        async function generateTrainerDashboard() {
+            const trainer = document.getElementById('dashboard_trainer').value;
+            const trainingId = document.getElementById('dashboard_training_id').value;
+            const dateFrom = document.getElementById('date_from').value;
+            const dateTo = document.getElementById('date_to').value;
+            
+            if (!trainer) {
+                alert('Please select a trainer');
+                return;
+            }
+
+            try {
+                // Get all feedback for the trainer
+                const response = await axios.get(`${API_BASE_URL}/get_feedback`);
+                
+                if (response.data.success) {
+                    const allFeedbacks = response.data.data;
+                    
+                    // Filter by trainer
+                    let trainerFeedbacks = allFeedbacks.filter(feedback => 
+                        feedback.trainer_name === trainer
+                    );
+                    
+                    // Filter by training ID if provided
+                    if (trainingId) {
+                        trainerFeedbacks = trainerFeedbacks.filter(feedback => 
+                            feedback.training_id === trainingId
+                        );
+                    }
+                    
+                    // Filter by date range if provided
+                    if (dateFrom || dateTo) {
+                        trainerFeedbacks = trainerFeedbacks.filter(feedback => {
+                            const feedbackDate = new Date(feedback.date);
+                            if (dateFrom && feedbackDate < new Date(dateFrom)) return false;
+                            if (dateTo && feedbackDate > new Date(dateTo)) return false;
+                            return true;
+                        });
+                    }
+                    
+                    if (trainerFeedbacks.length === 0) {
+                        alert('No feedback found for the selected criteria');
+                        return;
+                    }
+                    
+                    displayTrainerDashboard(trainerFeedbacks, trainer, trainingId, dateFrom, dateTo);
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                alert('Error generating trainer dashboard: ' + error.message);
+            }
+        }
+
+        // Display trainer dashboard with comprehensive trend analysis
+        function displayTrainerDashboard(feedbacks, trainer, trainingId, dateFrom, dateTo) {
+            const resultsDiv = document.getElementById('dashboard-analysis-results');
+            const contentDiv = document.getElementById('dashboard-analysis-content');
+            
+            // Calculate metrics and trends
+            const metrics = calculateTrainerMetrics(feedbacks);
+            const trends = calculateTrendAnalysis(feedbacks);
+            
+            // Build filter text
+            let filterText = '';
+            if (trainingId) filterText += ` | Training ID: ${trainingId}`;
+            if (dateFrom && dateTo) filterText += ` | ${dateFrom} to ${dateTo}`;
+            else if (dateFrom) filterText += ` | from ${dateFrom}`;
+            else if (dateTo) filterText += ` | until ${dateTo}`;
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-2xl font-bold mb-2">${trainer} - Performance Dashboard</h3>
+                        <p class="text-lg opacity-90">${metrics.totalSessions} Sessions | ${metrics.totalParticipants} Participants${filterText}</p>
+                    </div>
+                    
+                    <!-- Trend Analysis Section -->
+                    <div class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4">Training ID Performance Trend Analysis</h3>
+                        <p class="text-lg opacity-90 mb-6">${trainer}'s performance across different training sessions</p>
+                        
+                        <!-- Trend Analysis Charts -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <!-- Performance Trend Chart -->
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h4 class="text-xl font-bold text-gray-800 mb-4">Performance Across Training IDs</h4>
+                                <div class="h-64 flex items-center justify-center">
+                                    <canvas id="trendChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Training ID Comparison Chart -->
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h4 class="text-xl font-bold text-gray-800 mb-4">Training ID Comparison</h4>
+                                <div class="h-64 flex items-center justify-center">
+                                    <canvas id="sessionChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Detailed Trend Metrics -->
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">Training Performance Summary</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <div class="text-sm font-medium text-gray-600">Best Training ID</div>
+                                    <div class="text-2xl font-bold text-green-600">${trends.bestSession.rating.toFixed(1)}</div>
+                                    <div class="text-xs text-gray-500">${trends.bestSession.sessionId}</div>
+                                </div>
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <div class="text-sm font-medium text-gray-600">Worst Training ID</div>
+                                    <div class="text-2xl font-bold text-red-600">${trends.worstSession.rating.toFixed(1)}</div>
+                                    <div class="text-xs text-gray-500">${trends.worstSession.sessionId}</div>
+                                </div>
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <div class="text-sm font-medium text-gray-600">Improvement Rate</div>
+                                    <div class="text-2xl font-bold ${trends.improvementRate > 0 ? 'text-green-600' : 'text-red-600'}">${trends.improvementRate > 0 ? '+' : ''}${trends.improvementRate.toFixed(1)}%</div>
+                                    <div class="text-xs text-gray-500">vs Previous Period</div>
+                                </div>
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <div class="text-sm font-medium text-gray-600">Consistency Score</div>
+                                    <div class="text-2xl font-bold text-blue-600">${trends.consistencyScore.toFixed(1)}</div>
+                                    <div class="text-xs text-gray-500">Rating Stability</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 ${metrics.last3SessionsAvg >= 4 ? 'border-green-500 bg-green-50' : 'border-yellow-500 bg-yellow-50'} hover:shadow-xl transition-shadow duration-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 mb-1">Last 3 Sessions Avg</p>
+                                    <p class="text-3xl font-bold ${metrics.last3SessionsAvg >= 4 ? 'text-green-600' : 'text-yellow-600'}">${metrics.last3SessionsAvg.toFixed(1)}</p>
+                                    <p class="text-xs ${metrics.last3SessionsAvg >= 4 ? 'text-green-600' : 'text-yellow-600'} font-medium mt-1">${metrics.last3SessionsAvg >= 4 ? '✓ Target Achieved' : '⚠ Below Target'}</p>
+                                </div>
+                                <div class="w-12 h-12 ${metrics.last3SessionsAvg >= 4 ? 'bg-green-100' : 'bg-yellow-100'} rounded-full flex items-center justify-center">
+                                    <div class="w-6 h-6 ${metrics.last3SessionsAvg >= 4 ? 'bg-green-500' : 'bg-yellow-500'} rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-cyan-500 bg-cyan-50 hover:shadow-xl transition-shadow duration-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 mb-1">Overall Average</p>
+                                    <p class="text-3xl font-bold text-cyan-600">${metrics.overallAvg.toFixed(1)}</p>
+                                    <p class="text-xs text-cyan-600 font-medium mt-1">📊 All Sessions</p>
+                                </div>
+                                <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                                    <div class="w-6 h-6 bg-cyan-500 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500 bg-blue-50 hover:shadow-xl transition-shadow duration-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 mb-1">Satisfaction Rate</p>
+                                    <p class="text-3xl font-bold text-blue-600">${metrics.satisfactionRate.toFixed(1)}%</p>
+                                    <p class="text-xs text-blue-600 font-medium mt-1">😊 High Ratings (≥4.0)</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <div class="w-6 h-6 bg-blue-500 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500 bg-orange-50 hover:shadow-xl transition-shadow duration-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 mb-1">Trend Direction</p>
+                                    <p class="text-3xl font-bold ${trends.overallTrend > 0 ? 'text-green-600' : trends.overallTrend < 0 ? 'text-red-600' : 'text-gray-600'}">${trends.overallTrend > 0 ? '↗' : trends.overallTrend < 0 ? '↘' : '→'}</p>
+                                    <p class="text-xs ${trends.overallTrend > 0 ? 'text-green-600' : trends.overallTrend < 0 ? 'text-red-600' : 'text-gray-600'} font-medium mt-1">${trends.overallTrend > 0 ? 'Improving' : trends.overallTrend < 0 ? 'Declining' : 'Stable'}</p>
+                                </div>
+                                <div class="w-12 h-12 ${trends.overallTrend > 0 ? 'bg-green-100' : trends.overallTrend < 0 ? 'bg-red-100' : 'bg-gray-100'} rounded-full flex items-center justify-center">
+                                    <div class="w-6 h-6 ${trends.overallTrend > 0 ? 'bg-green-500' : trends.overallTrend < 0 ? 'bg-red-500' : 'bg-gray-500'} rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quantitative Metrics with Sliders -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Quantitative Performance Metrics</h3>
+                        <div class="space-y-6">
+                            ${Object.entries(metrics.avgRatings)
+                                .sort(([,a], [,b]) => b - a)
+                                .map(([metric, rating]) => {
+                                    const percentage = (rating / 5) * 100;
+                                    const color = rating >= 4 ? 'from-green-400 to-green-600' : 
+                                                rating >= 3 ? 'from-yellow-400 to-yellow-600' : 
+                                                'from-red-400 to-red-600';
+                                    const textColor = rating >= 4 ? 'text-green-600' : 
+                                                    rating >= 3 ? 'text-yellow-600' : 
+                                                    'text-red-600';
+                                    
+                                    return `
+                                        <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-200 hover:border-gray-300">
+                                            <div class="flex justify-between items-center mb-3">
+                                                <h4 class="font-semibold text-gray-800">${metric.replace(/_/g, ' ').toUpperCase()}</h4>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-2xl font-bold ${textColor}">${rating.toFixed(1)}</span>
+                                                    <div class="w-8 h-8 ${rating >= 4 ? 'bg-green-100' : rating >= 3 ? 'bg-yellow-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                                                        <div class="w-4 h-4 ${rating >= 4 ? 'bg-green-500' : rating >= 3 ? 'bg-yellow-500' : 'bg-red-500'} rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="relative">
+                                                <div class="w-full bg-gray-200 rounded-full h-6 shadow-inner">
+                                                    <div class="bg-gradient-to-r ${color} h-6 rounded-full transition-all duration-1000 ease-out shadow-sm" 
+                                                         style="width: ${percentage}%"></div>
+                                                </div>
+                                                <div class="flex justify-between text-xs text-gray-500 mt-2 font-medium">
+                                                    <span class="px-2 py-1 bg-gray-200 rounded">1</span>
+                                                    <span class="px-2 py-1 bg-gray-200 rounded">2</span>
+                                                    <span class="px-2 py-1 bg-gray-200 rounded">3</span>
+                                                    <span class="px-2 py-1 bg-gray-200 rounded">4</span>
+                                                    <span class="px-2 py-1 bg-gray-200 rounded">5</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Draw charts after content is loaded
+            setTimeout(() => {
+                drawTrendChart(trends.sessionData);
+                drawSessionChart(trends.sessionData);
+            }, 100);
+            
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Calculate trainer metrics from feedback data
+        function calculateTrainerMetrics(feedbacks) {
+            // Group by training_id to get sessions
+            const sessions = {};
+            feedbacks.forEach(feedback => {
+                const sessionId = feedback.training_id;
+                if (!sessions[sessionId]) {
+                    sessions[sessionId] = [];
+                }
+                sessions[sessionId].push(feedback);
+            });
+            
+            // Calculate session averages
+            const sessionAverages = Object.entries(sessions).map(([sessionId, sessionFeedbacks]) => {
+                let totalRating = 0;
+                let ratingCount = 0;
+                
+                sessionFeedbacks.forEach(feedback => {
+                    if (feedback.quantitative) {
+                        Object.values(feedback.quantitative).forEach(rating => {
+                            if (typeof rating === 'number' && rating > 0) {
+                                totalRating += rating;
+                                ratingCount++;
+                            }
+                        });
+                    }
+                });
+                
+                return {
+                    sessionId,
+                    average: ratingCount > 0 ? totalRating / ratingCount : 0,
+                    participantCount: sessionFeedbacks.length
+                };
+            });
+            
+            // Sort by session ID for chronological order
+            sessionAverages.sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+            
+            // Calculate last 3 sessions average
+            const last3Sessions = sessionAverages.slice(-3);
+            const last3SessionsAvg = last3Sessions.length > 0 ? 
+                last3Sessions.reduce((sum, session) => sum + session.average, 0) / last3Sessions.length : 0;
+            
+            // Calculate overall average
+            const overallAvg = sessionAverages.length > 0 ? 
+                sessionAverages.reduce((sum, session) => sum + session.average, 0) / sessionAverages.length : 0;
+            
+            // Calculate satisfaction rate (percentage of ratings >= 4)
+            let highRatingCount = 0;
+            let totalRatingCount = 0;
+            
+            feedbacks.forEach(feedback => {
+                if (feedback.quantitative) {
+                    Object.values(feedback.quantitative).forEach(rating => {
+                        if (typeof rating === 'number' && rating > 0) {
+                            totalRatingCount++;
+                            if (rating >= 4) highRatingCount++;
+                        }
+                    });
+                }
+            });
+            
+            const satisfactionRate = totalRatingCount > 0 ? (highRatingCount / totalRatingCount) * 100 : 0;
+            
+            // Calculate consistency (inverse of standard deviation)
+            const allRatings = [];
+            feedbacks.forEach(feedback => {
+                if (feedback.quantitative) {
+                    Object.values(feedback.quantitative).forEach(rating => {
+                        if (typeof rating === 'number' && rating > 0) {
+                            allRatings.push(rating);
+                        }
+                    });
+                }
+            });
+            
+            const mean = allRatings.length > 0 ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length : 0;
+            const variance = allRatings.length > 0 ? 
+                allRatings.reduce((sum, rating) => sum + Math.pow(rating - mean, 2), 0) / allRatings.length : 0;
+            const standardDeviation = Math.sqrt(variance);
+            const consistencyScore = standardDeviation > 0 ? Math.max(0, 5 - standardDeviation) : 5;
+            
+            // Calculate average ratings for each metric
+            const avgRatings = {};
+            const metricCounts = {};
+            
+            feedbacks.forEach(feedback => {
+                if (feedback.quantitative) {
+                    Object.entries(feedback.quantitative).forEach(([metric, rating]) => {
+                        if (typeof rating === 'number' && rating > 0) {
+                            if (!avgRatings[metric]) {
+                                avgRatings[metric] = 0;
+                                metricCounts[metric] = 0;
+                            }
+                            avgRatings[metric] += rating;
+                            metricCounts[metric]++;
+                        }
+                    });
+                }
+            });
+            
+            // Calculate final averages
+            Object.keys(avgRatings).forEach(metric => {
+                avgRatings[metric] = avgRatings[metric] / metricCounts[metric];
+            });
+            
+            return {
+                totalSessions: Object.keys(sessions).length,
+                totalParticipants: feedbacks.length,
+                last3SessionsAvg,
+                overallAvg,
+                satisfactionRate,
+                consistencyScore,
+                avgRatings
+            };
+        }
+
+        // Calculate comprehensive trend analysis across training IDs
+        function calculateTrendAnalysis(feedbacks) {
+            // Group by training_id to get different training sessions
+            const sessions = {};
+            feedbacks.forEach(feedback => {
+                const sessionId = feedback.training_id;
+                if (!sessions[sessionId]) {
+                    sessions[sessionId] = [];
+                }
+                sessions[sessionId].push(feedback);
+            });
+            
+            // Calculate training ID averages
+            const sessionData = Object.entries(sessions).map(([sessionId, sessionFeedbacks]) => {
+                let totalRating = 0;
+                let ratingCount = 0;
+                let sessionDate = null;
+                
+                sessionFeedbacks.forEach(feedback => {
+                    if (feedback.quantitative) {
+                        Object.values(feedback.quantitative).forEach(rating => {
+                            if (typeof rating === 'number' && rating > 0) {
+                                totalRating += rating;
+                                ratingCount++;
+                            }
+                        });
+                    }
+                    if (feedback.date && !sessionDate) {
+                        sessionDate = new Date(feedback.date);
+                    }
+                });
+                
+                return {
+                    sessionId,
+                    average: ratingCount > 0 ? totalRating / ratingCount : 0,
+                    participantCount: sessionFeedbacks.length,
+                    date: sessionDate || new Date(),
+                    participants: sessionFeedbacks.map(f => f.student_name || 'Anonymous')
+                };
+            });
+            
+            // Sort by training ID for consistent display
+            sessionData.sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+            
+            // Calculate trend metrics across training IDs
+            const ratings = sessionData.map(s => s.average);
+            const overallTrend = calculateTrend(ratings);
+            
+            // Find best and worst training IDs
+            const bestSession = sessionData.reduce((best, current) => 
+                current.average > best.average ? current : best, sessionData[0] || {sessionId: 'N/A', rating: 0});
+            const worstSession = sessionData.reduce((worst, current) => 
+                current.average < worst.average ? current : worst, sessionData[0] || {sessionId: 'N/A', rating: 0});
+            
+            // Calculate improvement rate (comparing first half vs second half of training IDs)
+            const midPoint = Math.floor(sessionData.length / 2);
+            const firstHalf = sessionData.slice(0, midPoint);
+            const secondHalf = sessionData.slice(midPoint);
+            
+            const firstHalfAvg = firstHalf.length > 0 ? 
+                firstHalf.reduce((sum, s) => sum + s.average, 0) / firstHalf.length : 0;
+            const secondHalfAvg = secondHalf.length > 0 ? 
+                secondHalf.reduce((sum, s) => sum + s.average, 0) / secondHalf.length : 0;
+            
+            const improvementRate = firstHalfAvg > 0 ? 
+                ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100 : 0;
+            
+            // Calculate consistency across training IDs
+            const mean = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
+            const variance = ratings.length > 0 ? 
+                ratings.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / ratings.length : 0;
+            const standardDeviation = Math.sqrt(variance);
+            const consistencyScore = standardDeviation > 0 ? Math.max(0, 5 - standardDeviation) : 5;
+            
+            return {
+                sessionData,
+                overallTrend,
+                bestSession: { ...bestSession, rating: bestSession.average },
+                worstSession: { ...worstSession, rating: worstSession.average },
+                improvementRate,
+                consistencyScore
+            };
+        }
+
+        // Calculate trend direction (-1, 0, 1)
+        function calculateTrend(values) {
+            if (values.length < 2) return 0;
+            
+            const firstHalf = values.slice(0, Math.floor(values.length / 2));
+            const secondHalf = values.slice(Math.floor(values.length / 2));
+            
+            const firstAvg = firstHalf.reduce((sum, v) => sum + v, 0) / firstHalf.length;
+            const secondAvg = secondHalf.reduce((sum, v) => sum + v, 0) / secondHalf.length;
+            
+            const diff = secondAvg - firstAvg;
+            if (Math.abs(diff) < 0.1) return 0; // Stable
+            return diff > 0 ? 1 : -1; // Improving or Declining
+        }
+
+        // Draw trend chart showing performance across training IDs
+        function drawTrendChart(sessionData) {
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            if (sessionData.length === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available', width / 2, height / 2);
+                return;
+            }
+            
+            // Chart dimensions
+            const margin = 40;
+            const chartWidth = width - 2 * margin;
+            const chartHeight = height - 2 * margin;
+            
+            // Find min/max values
+            const minRating = Math.min(...sessionData.map(s => s.average));
+            const maxRating = Math.max(...sessionData.map(s => s.average));
+            const range = maxRating - minRating || 1;
+            
+            // Draw axes
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin, margin);
+            ctx.lineTo(margin, height - margin);
+            ctx.lineTo(width - margin, height - margin);
+            ctx.stroke();
+            
+            // Draw trend line connecting training IDs
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            sessionData.forEach((session, index) => {
+                const x = margin + (index / (sessionData.length - 1)) * chartWidth;
+                const y = height - margin - ((session.average - minRating) / range) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+            
+            // Draw data points for each training ID
+            sessionData.forEach((session, index) => {
+                const x = margin + (index / (sessionData.length - 1)) * chartWidth;
+                const y = height - margin - ((session.average - minRating) / range) * chartHeight;
+                
+                // Color based on performance
+                const color = session.average >= 4 ? '#10b981' : 
+                             session.average >= 3 ? '#f59e0b' : '#ef4444';
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add training ID labels
+                ctx.fillStyle = '#666';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(session.sessionId, x, height - margin + 15);
+                
+                // Add participant count
+                ctx.fillStyle = '#999';
+                ctx.font = '8px Arial';
+                ctx.fillText(`(${session.participantCount})`, x, height - margin + 25);
+            });
+            
+            // Add Y-axis labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - margin - (i / 5) * chartHeight;
+                ctx.fillText(i.toFixed(1), margin - 10, y + 4);
+            }
+        }
+
+        // Draw training ID comparison chart
+        function drawSessionChart(sessionData) {
+            const canvas = document.getElementById('sessionChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            if (sessionData.length === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available', width / 2, height / 2);
+                return;
+            }
+            
+            // Chart dimensions
+            const margin = 40;
+            const chartWidth = width - 2 * margin;
+            const chartHeight = height - 2 * margin;
+            const barWidth = chartWidth / sessionData.length * 0.8;
+            
+            // Find max value
+            const maxRating = Math.max(...sessionData.map(s => s.average));
+            
+            // Draw bars for each training ID
+            sessionData.forEach((session, index) => {
+                const x = margin + (index / sessionData.length) * chartWidth + (chartWidth / sessionData.length - barWidth) / 2;
+                const barHeight = (session.average / maxRating) * chartHeight;
+                const y = height - margin - barHeight;
+                
+                // Color based on rating
+                const color = session.average >= 4 ? '#10b981' : 
+                             session.average >= 3 ? '#f59e0b' : '#ef4444';
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Add value labels on top of bars
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(session.average.toFixed(1), x + barWidth / 2, y - 5);
+                
+                // Add training ID labels
+                ctx.fillStyle = '#666';
+                ctx.font = '8px Arial';
+                ctx.fillText(session.sessionId, x + barWidth / 2, height - margin + 12);
+                
+                // Add participant count
+                ctx.fillStyle = '#999';
+                ctx.font = '7px Arial';
+                ctx.fillText(`(${session.participantCount})`, x + barWidth / 2, height - margin + 22);
+            });
+            
+            // Add Y-axis labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - margin - (i / 5) * chartHeight;
+                ctx.fillText(i.toFixed(1), margin - 10, y + 4);
+            }
+        }
+
+        // Submit feedback form
+        document.getElementById('feedback-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                training_id: document.getElementById('training_id').value,
+                student_name: document.getElementById('student_name').value,
+                trainer_name: document.getElementById('trainer_name').value,
+                training_date_from: document.getElementById('training_date_from').value,
+                training_date_to: document.getElementById('training_date_to').value,
+                quantitative: {
+                    content_quality: parseInt(document.getElementById('content_quality').value),
+                    trainer_effectiveness: parseInt(document.getElementById('trainer_effectiveness').value),
+                    clarity_explanation: parseInt(document.getElementById('clarity_explanation').value),
+                    engagement_interaction: parseInt(document.getElementById('engagement_interaction').value),
+                    practical_relevance: parseInt(document.getElementById('practical_relevance').value),
+                    learning_materials_quality: parseInt(document.getElementById('learning_materials_quality').value),
+                    session_organization: parseInt(document.getElementById('session_organization').value),
+                    time_management: parseInt(document.getElementById('time_management').value),
+                    technical_support: parseInt(document.getElementById('technical_support').value),
+                    learning_environment: parseInt(document.getElementById('learning_environment').value),
+                    follow_up_support: parseInt(document.getElementById('follow_up_support').value),
+                    overall_satisfaction: parseInt(document.getElementById('overall_satisfaction').value),
+                    communication_skills: parseInt(document.getElementById('communication_skills').value),
+                    subject_matter_expertise: parseInt(document.getElementById('subject_matter_expertise').value),
+                    problem_solving_approach: parseInt(document.getElementById('problem_solving_approach').value),
+                    real_world_examples: parseInt(document.getElementById('real_world_examples').value),
+                    hands_on_practice: parseInt(document.getElementById('hands_on_practice').value)
+                },
+                qualitative: {
+                    general_feedback: document.getElementById('general_feedback').value,
+                    learning_outcomes: document.getElementById('learning_outcomes').value,
+                    practical_application: document.getElementById('practical_application').value,
+                    trainer_feedback: document.getElementById('trainer_feedback').value,
+                    suggestions_improvement: document.getElementById('suggestions_improvement').value,
+                    open_ended_feedback: document.getElementById('open_ended_feedback').value
+                }
+            };
+
+            try {
+                const response = await axios.post(`${API_BASE_URL}/submit_feedback`, formData);
+                
+                if (response.data.success) {
+                    showStatus('form-status', 'success', 'Feedback submitted successfully!');
+                    document.getElementById('feedback-form').reset();
+                } else {
+                    showStatus('form-status', 'error', response.data.message);
+                }
+            } catch (error) {
+                showStatus('form-status', 'error', 'Error submitting feedback: ' + error.message);
+            }
+        });
+
+        // Show status message
+        function showStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            const colorClass = type === 'success' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+            element.innerHTML = `<div class="p-3 rounded-md ${colorClass}">${message}</div>`;
+        }
+
+        // Analyze training feedback
+        async function analyzeTrainingFeedback() {
+            const trainingId = document.getElementById('training_analysis_id').value;
+            if (!trainingId.trim()) {
+                alert('Please enter a training ID');
+                return;
+            }
+
+            try {
+                console.log('=== NEW VERSION 2.0 ===');
+                console.log('Sending request for training ID:', trainingId);
+                const response = await axios.post(`${API_BASE_URL}/analyze_training_feedback`, { training_id: trainingId });
+                
+                console.log('Response received:', response.data);
+                
+                if (response.data.success) {
+                    console.log('Calling displayTrainingAnalysisResults with:', response.data.data);
+                    displayTrainingAnalysisResults(response.data.data);
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                console.error('Error details:', error);
+                alert('Error analyzing training feedback: ' + error.message);
+            }
+        }
+
+        // Create a simple bar chart
+        function createBarChart(containerId, data, title) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const maxValue = Math.max(...Object.values(data));
+            const chartHtml = `
+                <div class="space-y-2">
+                    <h4 class="font-semibold text-gray-700 mb-3">${title}</h4>
+                    ${Object.entries(data).map(([key, value]) => {
+                        const percentage = (value / maxValue) * 100;
+                        const color = value >= 4 ? 'bg-green-500' : value >= 3 ? 'bg-yellow-500' : 'bg-red-500';
+                        return `
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <span class="text-sm font-medium w-32">${key.replace(/_/g, ' ').toUpperCase()}</span>
+                                <div class="flex-1 mx-3">
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="${color} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-bold w-12 text-right">${value.toFixed(1)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            container.innerHTML = chartHtml;
+        }
+
+        // Display training analysis results
+        function displayTrainingAnalysisResults(data) {
+            try {
+                console.log('=== DISPLAY FUNCTION CALLED ===');
+                console.log('Data received:', data);
+                
+                const resultsDiv = document.getElementById('training-analysis-results');
+                const contentDiv = document.getElementById('training-analysis-content');
+                
+                console.log('Results div found:', !!resultsDiv);
+                console.log('Content div found:', !!contentDiv);
+                
+                // Safety check
+                if (!data) {
+                    console.error('No data received');
+                    contentDiv.innerHTML = '<div class="text-center text-red-500 py-8">No data received from server</div>';
+                    resultsDiv.classList.remove('hidden');
+                    return;
+                }
+            
+            // Extract basic data
+            const trainingId = data.training_id || 'Unknown';
+            const totalParticipants = data.total_participants || 0;
+            const summary = data.summary || 'No summary available';
+            const sentiment = data.sentiment || 'neutral';
+            const suggestions = Array.isArray(data.suggestions) ? data.suggestions.join(', ') : (data.suggestions || 'No suggestions available');
+            
+            // Get all feedback data
+            const allFeedbacks = data.all_feedbacks || [];
+            
+            // Calculate metrics from individual feedback
+            let metrics = {};
+            let allRatings = [];
+            let overallRating = 'N/A';
+            let highRatings = 0;
+            let lowRatings = 0;
+            let satisfactionRate = '0';
+            
+            if (allFeedbacks.length > 0) {
+                // Process each feedback
+                allFeedbacks.forEach(feedback => {
+                    if (feedback.quantitative) {
+                        Object.entries(feedback.quantitative).forEach(([key, value]) => {
+                            const rating = parseFloat(value);
+                            if (!isNaN(rating) && rating > 0) {
+                                if (!metrics[key]) {
+                                    metrics[key] = [];
+                                }
+                                metrics[key].push(rating);
+                                allRatings.push(rating);
+                            }
+                        });
+                    }
+                });
+                
+                // Calculate averages for each metric
+                Object.keys(metrics).forEach(key => {
+                    metrics[key] = metrics[key].reduce((a, b) => a + b, 0) / metrics[key].length;
+                });
+                
+                // Calculate overall rating
+                if (allRatings.length > 0) {
+                    overallRating = (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1);
+                    highRatings = allRatings.filter(r => r >= 4).length;
+                    lowRatings = allRatings.filter(r => r <= 2).length;
+                    satisfactionRate = ((highRatings / allRatings.length) * 100).toFixed(1);
+                }
+            }
+            
+            console.log('Calculated metrics:', metrics);
+            console.log('Overall rating:', overallRating);
+            console.log('Satisfaction rate:', satisfactionRate);
+            
+            // Process qualitative data for summary
+            let qualitativeSummary = '';
+            let allTextFeedback = [];
+            let positiveCount = 0;
+            let negativeCount = 0;
+            
+            if (allFeedbacks.length > 0) {
+                allFeedbacks.forEach(feedback => {
+                    if (feedback.qualitative) {
+                        Object.values(feedback.qualitative).forEach(text => {
+                            if (text && text.trim().length > 0) {
+                                allTextFeedback.push(text.trim());
+                            }
+                        });
+                    }
+                });
+                
+                // Create a simple summary from text feedback
+                if (allTextFeedback.length > 0) {
+                    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'helpful', 'useful', 'clear', 'understandable'];
+                    const negativeWords = ['bad', 'terrible', 'confusing', 'unclear', 'boring', 'difficult', 'hard', 'poor'];
+                    
+                    allTextFeedback.forEach(text => {
+                        const lowerText = text.toLowerCase();
+                        positiveWords.forEach(word => {
+                            if (lowerText.includes(word)) positiveCount++;
+                        });
+                        negativeWords.forEach(word => {
+                            if (lowerText.includes(word)) negativeCount++;
+                        });
+                    });
+                    
+                    qualitativeSummary = `Based on ${allTextFeedback.length} text responses: `;
+                    if (positiveCount > negativeCount) {
+                        qualitativeSummary += `Overall positive feedback (${positiveCount} positive mentions vs ${negativeCount} negative). `;
+                    } else if (negativeCount > positiveCount) {
+                        qualitativeSummary += `Some concerns raised (${negativeCount} negative mentions vs ${positiveCount} positive). `;
+                    } else {
+                        qualitativeSummary += `Mixed feedback with balanced positive and negative comments. `;
+                    }
+                    
+                    // Add key themes
+                    const commonWords = {};
+                    allTextFeedback.forEach(text => {
+                        text.toLowerCase().split(/\s+/).forEach(word => {
+                            if (word.length > 3 && !['this', 'that', 'with', 'from', 'they', 'were', 'been', 'have', 'will', 'would'].includes(word)) {
+                                commonWords[word] = (commonWords[word] || 0) + 1;
+                            }
+                        });
+                    });
+                    
+                    const topWords = Object.entries(commonWords)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 5)
+                        .map(([word]) => word);
+                    
+                    if (topWords.length > 0) {
+                        qualitativeSummary += `Key themes: ${topWords.join(', ')}.`;
+                    }
+                }
+            }
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-2xl font-bold mb-2">Training Feedback Analysis</h3>
+                        <p class="text-lg opacity-90">Training ID: ${trainingId} | ${allFeedbacks.length} Participants</p>
+                    </div>
+                    
+                    <!-- KPI Card - Overall Average Rating -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Overall Performance KPI</h3>
+                        <div class="text-center">
+                            <div class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-full">
+                                <div class="text-5xl font-bold">${overallRating}/5</div>
+                                <div class="text-lg opacity-90">Overall Average Rating</div>
+                                <div class="text-sm opacity-75 mt-2">Based on ${allRatings.length} individual ratings</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quantitative Analysis - Interactive Sliders -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Quantitative Feedback Analysis</h3>
+                        <div class="space-y-6">
+                            ${Object.keys(metrics).length > 0 ? 
+                                Object.entries(metrics)
+                                    .sort(([,a], [,b]) => b - a)
+                                    .map(([metric, rating]) => {
+                                        const percentage = (rating / 5) * 100;
+                                        const color = rating >= 4 ? 'from-green-400 to-green-600' : rating >= 3 ? 'from-yellow-400 to-yellow-600' : 'from-red-400 to-red-600';
+                                        const textColor = rating >= 4 ? 'text-green-600' : rating >= 3 ? 'text-yellow-600' : 'text-red-600';
+                                        const bgColor = rating >= 4 ? 'bg-green-50' : rating >= 3 ? 'bg-yellow-50' : 'bg-red-50';
+                                        
+                                        return `
+                                            <div class="p-4 ${bgColor} rounded-lg">
+                                                <div class="flex justify-between items-center mb-3">
+                                                    <h4 class="font-semibold text-gray-800">${metric.replace(/_/g, ' ').toUpperCase()}</h4>
+                                                    <span class="text-2xl font-bold ${textColor}">${rating.toFixed(1)}</span>
+                                                </div>
+                                                <div class="relative">
+                                                    <div class="w-full bg-gray-200 rounded-full h-4">
+                                                        <div class="bg-gradient-to-r ${color} h-4 rounded-full transition-all duration-1000 ease-out" 
+                                                             style="width: ${percentage}%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                                        <span>1</span>
+                                                        <span>2</span>
+                                                        <span>3</span>
+                                                        <span>4</span>
+                                                        <span>5</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('') :
+                                '<div class="text-center text-gray-500 py-8">No quantitative data available</div>'
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Qualitative Analysis - Sentiment Summary -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Qualitative Feedback Analysis</h3>
+                        
+                        <!-- Sentiment Summary -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600">${allTextFeedback.length > 0 ? Math.round((positiveCount / (positiveCount + negativeCount)) * 100) : 0}%</div>
+                                <div class="text-sm text-gray-600">Positive</div>
+                            </div>
+                            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                                <div class="text-2xl font-bold text-yellow-600">${allTextFeedback.length > 0 ? Math.round(((allTextFeedback.length - positiveCount - negativeCount) / allTextFeedback.length) * 100) : 0}%</div>
+                                <div class="text-sm text-gray-600">Neutral</div>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg">
+                                <div class="text-2xl font-bold text-red-600">${allTextFeedback.length > 0 ? Math.round((negativeCount / (positiveCount + negativeCount)) * 100) : 0}%</div>
+                                <div class="text-sm text-gray-600">Negative</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text Summary -->
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2">What Students Said Overall:</h4>
+                                <div class="p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-gray-700">${qualitativeSummary || 'No text feedback available for analysis'}</p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2">Key Insights:</h4>
+                                <div class="p-4 bg-green-50 rounded-lg">
+                                    <p class="text-gray-700">${summary}</p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2">Recommendations:</h4>
+                                <div class="p-4 bg-yellow-50 rounded-lg">
+                                    <p class="text-gray-700">${suggestions}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error in displayTrainingAnalysisResults:', error);
+                const resultsDiv = document.getElementById('training-analysis-results');
+                const contentDiv = document.getElementById('training-analysis-content');
+                contentDiv.innerHTML = '<div class="text-center text-red-500 py-8">Error displaying results: ' + error.message + '</div>';
+                resultsDiv.classList.remove('hidden');
+            }
+        }
+
+
+        // Load student feedback
+        async function loadStudentFeedback() {
+            const trainingId = document.getElementById('student_training_id').value;
+            if (!trainingId.trim()) {
+                alert('Please enter a training ID');
+                return;
+            }
+
+            try {
+                const response = await axios.get(`${API_BASE_URL}/get_feedback?training_id=${trainingId}`);
+                
+                if (response.data.success) {
+                    // Store feedbacks in session storage for modal access and Excel download
+                    sessionStorage.setItem('currentFeedbacks', JSON.stringify(response.data.data));
+                    sessionStorage.setItem('currentTrainingId', trainingId);
+                    displayStudentFeedback(response.data.data);
+                    
+                    // Enable download button
+                    document.getElementById('download-excel-btn').disabled = false;
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                alert('Error loading student feedback: ' + error.message);
+            }
+        }
+
+        // Display student feedback with clickable links
+        function displayStudentFeedback(feedbacks) {
+            const resultsDiv = document.getElementById('student-feedback-results');
+            const contentDiv = document.getElementById('student-feedback-content');
+            
+            if (feedbacks.length === 0) {
+                contentDiv.innerHTML = '<div class="text-center text-gray-500 py-8">No feedback found for this training ID</div>';
+            } else {
+                let html = `
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-blue-800 mb-2">Click on any student name to view their detailed feedback</h3>
+                            <p class="text-sm text-blue-600">Total ${feedbacks.length} students have submitted feedback</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+                
+                feedbacks.forEach((feedback, index) => {
+                    const studentName = feedback.student_name || `Student ${index + 1}`;
+                    const feedbackDate = feedback.date ? new Date(feedback.date).toLocaleDateString() : 'Date not available';
+                    const trainerName = feedback.trainer_name || 'Not specified';
+                    
+                    html += `
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
+                             onclick="showStudentDetails(${index})">
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-blue-600 hover:text-blue-800 underline mb-2">
+                                    ${studentName}
+                                </div>
+                                <div class="text-sm text-gray-500 mb-1">${feedbackDate}</div>
+                                <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
+                                <div class="text-xs text-gray-400 mt-1">Click to view details</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                contentDiv.innerHTML = html;
+            }
+            
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Show detailed student feedback
+        function showStudentDetails(index) {
+            const feedbacks = JSON.parse(sessionStorage.getItem('currentFeedbacks') || '[]');
+            const feedback = feedbacks[index];
+            
+            if (!feedback) {
+                alert('Feedback data not found');
+                return;
+            }
+
+            const studentName = feedback.student_name || `Student ${index + 1}`;
+            const feedbackDate = feedback.date ? new Date(feedback.date).toLocaleDateString() : 'Date not available';
+            const trainerName = feedback.trainer_name || 'Not specified';
+            
+            let detailsHtml = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-2xl font-bold text-gray-800">${studentName}'s Feedback Details</h3>
+                                <button onclick="closeStudentDetails()" class="text-gray-500 hover:text-gray-700 text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors duration-200 font-medium">✕ Close</button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-600">Feedback Date</div>
+                                    <div class="text-lg font-semibold">${feedbackDate}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-600">Trainer</div>
+                                    <div class="text-lg font-semibold">${trainerName}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-600">Training ID</div>
+                                    <div class="text-lg font-semibold">${feedback.training_id}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">Quantitative Ratings</h4>
+                                    <div class="space-y-3">
+            `;
+            
+            if (feedback.quantitative) {
+                Object.entries(feedback.quantitative).forEach(([key, value]) => {
+                    const color = value >= 4 ? 'bg-green-100 text-green-800' : value >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                    detailsHtml += `
+                        <div class="flex justify-between items-center p-3 ${color} rounded-lg">
+                            <span class="font-medium">${key.replace(/_/g, ' ').toUpperCase()}</span>
+                            <span class="font-bold text-lg">${value}/5</span>
+                        </div>
+                    `;
+                });
+            } else {
+                detailsHtml += '<div class="text-gray-500 italic">No quantitative ratings available</div>';
+            }
+            
+            detailsHtml += `
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4">Qualitative Feedback</h4>
+                                    <div class="space-y-4">
+            `;
+            
+            if (feedback.qualitative) {
+                Object.entries(feedback.qualitative).forEach(([key, value]) => {
+                    if (value && value.trim()) {
+                        detailsHtml += `
+                            <div class="p-3 bg-blue-50 rounded-lg">
+                                <div class="font-medium text-gray-700 mb-1">${key.replace(/_/g, ' ').toUpperCase()}</div>
+                                <div class="text-gray-600">${value}</div>
+                            </div>
+                        `;
+                    }
+                });
+            } else {
+                detailsHtml += '<div class="text-gray-500 italic">No qualitative feedback available</div>';
+            }
+            
+            detailsHtml += `
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', detailsHtml);
+        }
+
+        // Close student details modal
+        function closeStudentDetails() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Download Excel file
+        function downloadExcel() {
+            const feedbacks = JSON.parse(sessionStorage.getItem('currentFeedbacks') || '[]');
+            const trainingId = sessionStorage.getItem('currentTrainingId') || 'Unknown';
+            
+            if (feedbacks.length === 0) {
+                alert('No feedback data available to download');
+                return;
+            }
+
+            // Create CSV content
+            const csvContent = createExcelContent(feedbacks, trainingId);
+            
+            // Create and download file as CSV (Excel can open this)
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Training_Feedback_${trainingId}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Create Excel content (CSV format that Excel can open)
+        function createExcelContent(feedbacks, trainingId) {
+            let csvContent = '';
+            
+            // Add BOM for UTF-8 to ensure proper encoding in Excel
+            csvContent += '\uFEFF';
+            
+            // Headers
+            const headers = [
+                'Student Name',
+                'Training ID',
+                'Trainer Name',
+                'Training Date',
+                'Date From',
+                'Date To',
+                'Content Quality',
+                'Trainer Effectiveness',
+                'Clarity of Explanation',
+                'Engagement & Interaction',
+                'Practical Relevance',
+                'Learning Materials Quality',
+                'Session Organization',
+                'Time Management',
+                'Technical Support',
+                'Learning Environment',
+                'Follow-up Support',
+                'Overall Satisfaction',
+                'Communication Skills',
+                'Subject Matter Expertise',
+                'Problem Solving Approach',
+                'Real-world Examples',
+                'Hands-on Practice',
+                'General Feedback',
+                'Learning Outcomes',
+                'Practical Application',
+                'Trainer Feedback',
+                'Suggestions for Improvement',
+                'Open-Ended Feedback'
+            ];
+            
+            csvContent += headers.join(',') + '\r\n';
+            
+            // Data rows
+            feedbacks.forEach(feedback => {
+                const row = [
+                    `"${(feedback.student_name || 'Anonymous').replace(/"/g, '""')}"`,
+                    `"${(feedback.training_id || '').replace(/"/g, '""')}"`,
+                    `"${(feedback.trainer_name || '').replace(/"/g, '""')}"`,
+                    `"${(feedback.date || '').replace(/"/g, '""')}"`,
+                    `"${(feedback.training_date_from || '').replace(/"/g, '""')}"`,
+                    `"${(feedback.training_date_to || '').replace(/"/g, '""')}"`,
+                    feedback.quantitative?.content_quality || '',
+                    feedback.quantitative?.trainer_effectiveness || '',
+                    feedback.quantitative?.clarity_explanation || '',
+                    feedback.quantitative?.engagement_interaction || '',
+                    feedback.quantitative?.practical_relevance || '',
+                    feedback.quantitative?.learning_materials_quality || '',
+                    feedback.quantitative?.session_organization || '',
+                    feedback.quantitative?.time_management || '',
+                    feedback.quantitative?.technical_support || '',
+                    feedback.quantitative?.learning_environment || '',
+                    feedback.quantitative?.follow_up_support || '',
+                    feedback.quantitative?.overall_satisfaction || '',
+                    feedback.quantitative?.communication_skills || '',
+                    feedback.quantitative?.subject_matter_expertise || '',
+                    feedback.quantitative?.problem_solving_approach || '',
+                    feedback.quantitative?.real_world_examples || '',
+                    feedback.quantitative?.hands_on_practice || '',
+                    `"${(feedback.qualitative?.general_feedback || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`,
+                    `"${(feedback.qualitative?.learning_outcomes || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`,
+                    `"${(feedback.qualitative?.practical_application || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`,
+                    `"${(feedback.qualitative?.trainer_feedback || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`,
+                    `"${(feedback.qualitative?.suggestions_improvement || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`,
+                    `"${(feedback.qualitative?.open_ended_feedback || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ')}"`
+                ];
+                csvContent += row.join(',') + '\r\n';
+            });
+            
+            return csvContent;
+        }
+
+        // Check admin status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminStatus();
+        });
+    </script>
+</body>
+</html>
