@@ -408,6 +408,7 @@
 
     <script>
         const API_BASE_URL = 'http://52.90.55.171:5000';
+        axios.defaults.withCredentials = true;
 
         // Show section function
         function showSection(section) {
@@ -435,7 +436,7 @@
         // Check admin authentication status
         async function checkAdminStatus() {
             try {
-                const response = await axios.get(`${API_BASE_URL}/admin/status`);
+                const response = await axios.get(`${API_BASE_URL}/admin/status`, { withCredentials: true });
                 if (response.data.success) {
                     showAdminStatus(response.data.admin_email);
                     enableAdminFeatures();
@@ -540,7 +541,7 @@
                 const response = await axios.post(`${API_BASE_URL}/admin/login`, {
                     email: email,
                     password: password
-                });
+                }, { withCredentials: true });
                 
                 if (response.data.success) {
                     showAdminStatus(response.data.admin_email);
@@ -559,7 +560,7 @@
         // Admin logout
         async function adminLogout() {
             try {
-                await axios.post(`${API_BASE_URL}/admin/logout`);
+                await axios.post(`${API_BASE_URL}/admin/logout`, {}, { withCredentials: true });
                 hideAdminStatus();
                 disableAdminFeatures();
                 showSection('form'); // Redirect to main form
