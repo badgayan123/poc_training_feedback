@@ -55,6 +55,27 @@ def insert_feedback(feedback_data):
             logger.warning("Database offline - simulating feedback insertion")
             return {"success": True, "inserted_id": "simulated_id", "message": "Offline mode - data not saved"}
         
+        # Normalize key fields
+        if feedback_data.get('student_name'):
+            feedback_data['student_name'] = (feedback_data['student_name'] or '').strip().upper()
+
+        # Prevent duplicate submissions for same training_id + student_name
+        try:
+            training_id = feedback_data.get('training_id')
+            student_name = feedback_data.get('student_name')
+            if training_id and student_name:
+                existing = db_manager.collection.find_one({
+                    'training_id': training_id,
+                    'student_name': student_name
+                })
+                if existing:
+                    return {
+                        'success': False,
+                        'message': 'Feedback already submitted for this student name in this training.'
+                    }
+        except Exception as e:
+            logger.error(f"Error during duplicate check: {e}")
+
         # Add timestamp if not present
         if 'timestamp' not in feedback_data:
             feedback_data['timestamp'] = datetime.utcnow()

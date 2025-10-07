@@ -110,6 +110,19 @@ def validate_feedback_data(data):
     
     if not data.get('student_name'):
         warnings.append('student_name is recommended')
+    else:
+        try:
+            name_raw = (data.get('student_name') or '').strip()
+            name_upper = name_raw.upper()
+            # Allow A-Z, spaces and common punctuation in names
+            import re
+            if not name_upper or not re.fullmatch(r"[A-Z .'-]+", name_upper):
+                errors.append('student_name must be CAPITAL letters only (A-Z, spaces, . \"- )')
+            else:
+                # Normalize to uppercase for downstream logic
+                data['student_name'] = name_upper
+        except Exception:
+            errors.append('invalid student_name')
     
     # Check quantitative data
     quantitative = data.get('quantitative', {})
@@ -375,6 +388,10 @@ def submit_feedback():
                 'warnings': validation_result['warnings']
             }), 400
         
+        # Normalize student name to uppercase defensively
+        if feedback_data.get('student_name'):
+            feedback_data['student_name'] = (feedback_data['student_name'] or '').strip().upper()
+
         # Add timestamp if not present
         if 'date' not in feedback_data:
             from datetime import datetime
