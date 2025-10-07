@@ -83,26 +83,21 @@ def login_admin(email: str, password: str) -> dict:
 def verify_admin_session(session_token: str) -> dict:
     """Verify admin session"""
     try:
+        # Primary: trust Flask's signed cookie session, which works across processes
+        admin_email = session.get('admin_email')
+        if admin_email:
+            return {"success": True, "admin_email": admin_email}
+
+        # Fallback: check in-memory map (may not exist across workers)
         if session_token not in ACTIVE_SESSIONS:
-            return {
-                "success": False,
-                "message": "Invalid session"
-            }
-        
+            return {"success": False, "message": "Invalid session"}
+
         session_data = ACTIVE_SESSIONS[session_token]
-        
         if datetime.utcnow() > session_data["expires_at"]:
-            # Session expired
             del ACTIVE_SESSIONS[session_token]
-            return {
-                "success": False,
-                "message": "Session expired"
-            }
-        
-        return {
-            "success": True,
-            "admin_email": session_data["admin_email"]
-        }
+            return {"success": False, "message": "Session expired"}
+
+        return {"success": True, "admin_email": session_data["admin_email"]}
         
     except Exception as e:
         logger.error(f"Error verifying session: {e}")
