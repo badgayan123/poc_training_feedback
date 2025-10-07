@@ -407,7 +407,8 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://52.90.55.171:5000';
+        // Use same-origin so cookies are sent reliably (avoids cross-origin 401)
+        const API_BASE_URL = '';
         axios.defaults.withCredentials = true;
 
         // Show section function
