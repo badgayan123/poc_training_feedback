@@ -401,7 +401,17 @@
 
         <!-- Users Dashboard Section (Admin Only) -->
         <div id="users-section" class="hidden bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Active Users (last 15 minutes)</h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Active Users (last 15 minutes)</h2>
+                <div class="text-sm text-gray-600">Last updated: <span id="users-last-updated">—</span></div>
+            </div>
+            <div id="users-loading" class="flex items-center text-sm text-gray-600 mb-3 hidden">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Loading...
+            </div>
             <div id="users-content"></div>
         </div>
     </div>
@@ -412,6 +422,9 @@
         axios.defaults.withCredentials = true;
 
         // Show section function
+        let usersRefreshTimer = null;
+        let usersLoading = false;
+        let lastUsersCache = null;
         function showSection(section) {
             // Check if trying to access admin-protected sections
             if (['analysis', 'dashboard', 'student'].includes(section)) {
@@ -428,10 +441,22 @@
             document.getElementById('student-section').classList.add('hidden');
             document.getElementById('admin-section').classList.add('hidden');
             const usersSection = document.getElementById('users-section'); if (usersSection) usersSection.classList.add('hidden');
+
+            // Clear any existing auto-refresh timer when switching sections
+            if (usersRefreshTimer) {
+                clearInterval(usersRefreshTimer);
+                usersRefreshTimer = null;
+            }
             
             // Show selected section
             document.getElementById(section + '-section').classList.remove('hidden');
-            if (section === 'users') { loadActiveUsers(); }
+            if (section === 'users') {
+                loadActiveUsers();
+                // Auto-refresh every 30 seconds while users dashboard is visible
+                usersRefreshTimer = setInterval(() => {
+                    loadActiveUsers();
+                }, 30000);
+            }
         }
 
         // Check admin authentication status
@@ -480,23 +505,56 @@
         }
 
         async function loadActiveUsers() {
+            if (usersLoading) return;
+            usersLoading = true;
+            const btn = document.getElementById('users-refresh-btn');
+            const loading = document.getElementById('users-loading');
+            if (btn) btn.disabled = true;
+            if (loading) loading.classList.remove('hidden');
             try {
                 const response = await axios.get(`${API_BASE_URL}/admin/active_users`, { withCredentials: true });
                 if (!response.data.success) {
-                    renderActiveUsers([],{message: response.data.message || 'Unable to load'});
+                    const message = response.data.message || 'Unable to load';
+                    if (lastUsersCache && Array.isArray(lastUsersCache)) {
+                        renderActiveUsers(lastUsersCache, { message: `Showing cached data - ${message}`, count: lastUsersCache.length });
+                    } else {
+                        renderActiveUsers([],{message});
+                    }
                     return;
                 }
-                renderActiveUsers(response.data.data, { window: response.data.active_window_minutes, count: response.data.count });
+                lastUsersCache = response.data.data || [];
+                renderActiveUsers(lastUsersCache, { window: response.data.active_window_minutes, count: response.data.count });
+                const ts = new Date().toLocaleString();
+                const last = document.getElementById('users-last-updated');
+                if (last) last.textContent = ts;
             } catch (err) {
-                renderActiveUsers([],{message: err.message || 'Error'});
+                const is401 = err && err.response && err.response.status === 401;
+                const msg = is401 ? 'Unauthorized - please login as admin' : (err && err.message) ? err.message : 'Error';
+                if (lastUsersCache && Array.isArray(lastUsersCache)) {
+                    renderActiveUsers(lastUsersCache, { message: `Showing cached data - ${msg}`, count: lastUsersCache.length });
+                } else {
+                    renderActiveUsers([],{message: msg});
+                }
+                // If unauthorized, pause auto-refresh to avoid noise
+                if (is401 && usersRefreshTimer) {
+                    clearInterval(usersRefreshTimer);
+                    usersRefreshTimer = null;
+                }
+            } finally {
+                usersLoading = false;
+                const btn2 = document.getElementById('users-refresh-btn');
+                if (btn2) btn2.disabled = false;
+                if (loading) loading.classList.add('hidden');
             }
         }
 
         function renderActiveUsers(users, meta) {
             const container = document.getElementById('users-content');
             if (!container) return;
+            const windowMinutes = (meta && meta.window) ? meta.window : 15;
+            const message = (meta && meta.message) ? ` - ${meta.message}` : '';
             if (!users || users.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-500 py-8">No active users in the last ${meta.window || 15} minutes${meta.message ? ' - ' + meta.message : ''}</div>`;
+                container.innerHTML = `<div class="text-center text-gray-500 py-8">No active users in the last ${windowMinutes} minutes${message}</div>`;
                 return;
             }
             const rows = users.map(u => `
@@ -510,9 +568,10 @@
             `).join('');
             container.innerHTML = `
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">Active Users (${meta.count})</h3>
-                    <button onclick="loadActiveUsers()" class="px-3 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">Refresh</button>
+                    <h3 class="text-xl font-bold text-gray-800">Active Users (${(meta && typeof meta.count === 'number') ? meta.count : users.length})</h3>
+                    <button id="users-refresh-btn" onclick="loadActiveUsers()" class="px-3 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">Refresh</button>
                 </div>
+                ${message ? `<div class=\"mb-3 text-sm text-gray-600\">${message.slice(3)}</div>` : ''}
                 <div class="overflow-x-auto">
                 <table class="min-w-full bg-white rounded-lg shadow">
                     <thead class="bg-gray-100">
