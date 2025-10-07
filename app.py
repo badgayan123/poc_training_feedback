@@ -71,10 +71,8 @@ def _geo_lookup(ip: str) -> dict:
 def track_active_user():
     """Track active users by IP and last seen time; enrich with geo data lazily."""
     try:
-        # Skip tracking for admin endpoints to reduce noise if desired
+        # Track all routes, including admin, so admin visits count too
         path = request.path or ''
-        if path.startswith('/admin'):  # still track normal app usage
-            return
         ip = _get_client_ip(request)
         now = datetime.utcnow()
         info = ACTIVE_USERS.get(ip, {})
@@ -91,6 +89,15 @@ def track_active_user():
     except Exception:
         # Never block requests due to tracking errors
         pass
+
+@app.route('/heartbeat', methods=['GET'])
+def heartbeat():
+    """Lightweight endpoint to register activity and return ok."""
+    try:
+        # The before_request will already register the IP/geo
+        return jsonify({"success": True, "ts": datetime.utcnow().isoformat()}), 200
+    except Exception:
+        return jsonify({"success": False}), 200
 
 def validate_feedback_data(data):
     """Simple validation for feedback data"""

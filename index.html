@@ -1868,6 +1868,10 @@
         // Check admin status on page load
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminStatus();
+            // Heartbeat every 60s to register activity
+            setInterval(() => {
+                axios.get(`${API_BASE_URL}/heartbeat`, { withCredentials: true }).catch(() => {});
+            }, 60000);
         });
     </script>
 </body>
