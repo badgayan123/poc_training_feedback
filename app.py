@@ -8,8 +8,6 @@ from simple_admin import login_admin, verify_admin_session, logout_admin, requir
 import logging
 import json
 import os
-from datetime import datetime, timedelta
-import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,36 +19,6 @@ app.config.from_object(Config)
 
 # Enable CORS for all routes
 CORS(app)
-
-# ----------------------
-# Active Users Tracking
-# ----------------------
-active_users = {}  # Store {ip: last_seen_timestamp}
-ip_location_cache = {}  # Cache IP → location to avoid repeated API calls
-
-def get_geo(ip):
-    """Get geolocation from IP using free API (ip-api.com)"""
-    if ip in ip_location_cache:
-        return ip_location_cache[ip]
-
-    try:
-        res = requests.get(f"http://ip-api.com/json/{ip}?fields=status,country,regionName,city")
-        data = res.json()
-        if data.get('status') == 'success':
-            location = f"{data['city']}, {data['regionName']}, {data['country']}"
-            ip_location_cache[ip] = location
-            return location
-    except Exception as e:
-        logger.warning(f"Failed to fetch geolocation for IP {ip}: {e}")
-
-    ip_location_cache[ip] = "Unknown"
-    return "Unknown"
-@app.before_request
-def track_active_user():
-    ip = request.remote_addr
-    active_users[ip] = datetime.utcnow()
-
-
 
 def validate_feedback_data(data):
     """Simple validation for feedback data"""
@@ -88,24 +56,6 @@ def validate_feedback_data(data):
         'errors': errors,
         'warnings': warnings
     }
-@app.route('/active_users', methods=['GET'])
-def get_active_users():
-    """Return users active in the last 5 minutes with timestamp and location"""
-    cutoff = datetime.utcnow() - timedelta(minutes=5)
-    active = {}
-
-    for ip, last_seen in active_users.items():
-        if last_seen >= cutoff:
-            active[ip] = {
-                'last_seen': last_seen.isoformat(),
-                'location': get_geo(ip)
-            }
-
-    return jsonify({
-        'active_user_count': len(active),
-        'active_users': active
-    })
-
 
 @app.route('/', methods=['GET'])
 def serve_index():

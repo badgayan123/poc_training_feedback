@@ -58,14 +58,6 @@
                     Login
                 </button>
             </form>
-            <!-- Dashboard Button (Hidden by default) -->
-            <div id="dashboard-button-container" class="text-center mt-6 hidden">
-                <button id="show-dashboard-btn"
-                        class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    Dashboard
-                </button>
-            </div>
-
             <div id="admin-login-status" class="mt-4"></div>
         </div>
 
@@ -406,12 +398,6 @@
             </div>
         </div>
     </div>
-	<!-- Active Users Dashboard (Hidden initially) -->
-           <div id="active-users-dashboard" class="hidden space-y-6 p-6 bg-white rounded-lg shadow-lg">
-               <h3 class="text-2xl font-bold text-gray-800 mb-4">Active Users Analytics</h3>
-               <canvas id="activeUsersChart" width="1000" height="400" class="border border-gray-200 rounded-lg"></canvas>
-           </div>
-
 
     <script>
         const API_BASE_URL = 'http://52.90.55.171:5000';
@@ -498,8 +484,6 @@
                     showStatus('admin-login-status', 'success', 'Admin login successful!');
                     document.getElementById('admin-login-form').reset();
                     showSection('form'); // Redirect to main form
-		    // Reveal Dashboard button
-                    document.getElementById('dashboard-button-container').classList.remove('hidden');
                 } else {
                     showStatus('admin-login-status', 'error', response.data.message);
                 }
@@ -1818,52 +1802,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminStatus();
         });
-document.getElementById('show-dashboard-btn').addEventListener('click', async function() {
-    const dashboardDiv = document.getElementById('active-users-dashboard');
-    dashboardDiv.classList.remove('hidden');
-    dashboardDiv.scrollIntoView({ behavior: 'smooth' });
-
-    try {
-        const response = await axios.get(`${API_BASE_URL}/active_users`);
-        if (response.data.success) {
-            const users = response.data.data; // [{username, activeMinutes}, ...]
-
-            const ctx = document.getElementById('activeUsersChart').getContext('2d');
-
-            const labels = users.map(u => u.username);
-            const activity = users.map(u => u.activeMinutes);
-
-            // Destroy previous chart if exists
-            if (window.activeUsersChartInstance) window.activeUsersChartInstance.destroy();
-
-            window.activeUsersChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Active Minutes',
-                        data: activity,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
-        } else {
-            alert('Error fetching active users: ' + response.data.message);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Error fetching active users: ' + error.message);
-    }
-});
-
     </script>
 </body>
 </html>
