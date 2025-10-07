@@ -437,7 +437,8 @@
         // Check admin authentication status
         async function checkAdminStatus() {
             try {
-                const response = await axios.get(`${API_BASE_URL}/admin/status`, { withCredentials: true });
+                // Align with backend's verify endpoint already present
+                const response = await axios.get(`${API_BASE_URL}/admin/verify`, { withCredentials: true });
                 if (response.data.success) {
                     showAdminStatus(response.data.admin_email);
                     enableAdminFeatures();

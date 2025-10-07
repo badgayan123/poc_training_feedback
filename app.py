@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object(Config)
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',  # allow cross-site cookies if frontend is on a different origin
-    SESSION_COOKIE_SECURE=False      # set True if you serve over HTTPS; required for SameSite=None on HTTPS
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False
 )
 
 # Enable CORS for all routes (allow credentials for session cookies)
