@@ -34,6 +34,7 @@
                 <button onclick="showSection('dashboard')" id="dashboard-btn" class="px-6 py-2 rounded-md bg-purple-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Dashboard</button>
                 <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Student Feedback</button>
                 <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
+                <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">User Dashboard</button>
             </div>
         </div>
 
@@ -397,6 +398,12 @@
                 <div id="student-feedback-content"></div>
             </div>
         </div>
+
+        <!-- Users Dashboard Section (Admin Only) -->
+        <div id="users-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Active Users (last 15 minutes)</h2>
+            <div id="users-content"></div>
+        </div>
     </div>
 
     <script>
@@ -418,9 +425,11 @@
             document.getElementById('dashboard-section').classList.add('hidden');
             document.getElementById('student-section').classList.add('hidden');
             document.getElementById('admin-section').classList.add('hidden');
+            const usersSection = document.getElementById('users-section'); if (usersSection) usersSection.classList.add('hidden');
             
             // Show selected section
             document.getElementById(section + '-section').classList.remove('hidden');
+            if (section === 'users') { loadActiveUsers(); }
         }
 
         // Check admin authentication status
@@ -456,6 +465,7 @@
             document.getElementById('analysis-btn').classList.remove('opacity-50', 'cursor-not-allowed');
             document.getElementById('dashboard-btn').classList.remove('opacity-50', 'cursor-not-allowed');
             document.getElementById('student-feedback-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('users-btn').classList.remove('opacity-50', 'cursor-not-allowed');
         }
 
         // Disable admin features
@@ -463,6 +473,60 @@
             document.getElementById('analysis-btn').classList.add('opacity-50', 'cursor-not-allowed');
             document.getElementById('dashboard-btn').classList.add('opacity-50', 'cursor-not-allowed');
             document.getElementById('student-feedback-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('users-btn').classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        async function loadActiveUsers() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/admin/active_users`, { withCredentials: true });
+                if (!response.data.success) {
+                    renderActiveUsers([],{message: response.data.message || 'Unable to load'});
+                    return;
+                }
+                renderActiveUsers(response.data.data, { window: response.data.active_window_minutes, count: response.data.count });
+            } catch (err) {
+                renderActiveUsers([],{message: err.message || 'Error'});
+            }
+        }
+
+        function renderActiveUsers(users, meta) {
+            const container = document.getElementById('users-content');
+            if (!container) return;
+            if (!users || users.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-8">No active users in the last ${meta.window || 15} minutes${meta.message ? ' - ' + meta.message : ''}</div>`;
+                return;
+            }
+            const rows = users.map(u => `
+                <tr class="border-b">
+                    <td class="px-4 py-2 font-mono">${u.ip}</td>
+                    <td class="px-4 py-2">${u.last_seen}</td>
+                    <td class="px-4 py-2">${u.city || ''}</td>
+                    <td class="px-4 py-2">${u.region || ''}</td>
+                    <td class="px-4 py-2">${u.country || ''}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Active Users (${meta.count})</h3>
+                    <button onclick="loadActiveUsers()" class="px-3 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">Refresh</button>
+                </div>
+                <div class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-lg shadow">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">IP</th>
+                            <th class="px-4 py-2 text-left">Last Seen (UTC)</th>
+                            <th class="px-4 py-2 text-left">City</th>
+                            <th class="px-4 py-2 text-left">Region</th>
+                            <th class="px-4 py-2 text-left">Country</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+                </div>
+            `;
         }
 
         // Check if admin is logged in

@@ -8,6 +8,8 @@ from simple_admin import login_admin, verify_admin_session, logout_admin, requir
 import logging
 import json
 import os
+import requests
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,8 +19,74 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Enable CORS for all routes
-CORS(app)
+# Enable CORS for all routes (allow credentials for session cookies)
+CORS(app, supports_credentials=True)
+
+# -----------------------------
+# Active users tracking (IP + time + geo)
+# -----------------------------
+ACTIVE_USERS = {}
+GEO_CACHE = {}
+ACTIVE_WINDOW_MINUTES = 15
+
+def _get_client_ip(req: "request") -> str:
+    """Get client IP considering common proxy headers."""
+    # X-Forwarded-For may contain multiple IPs, take the first
+    xff = req.headers.get('X-Forwarded-For', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    real_ip = req.headers.get('X-Real-IP')
+    if real_ip:
+        return real_ip
+    return req.remote_addr or '0.0.0.0'
+
+def _geo_lookup(ip: str) -> dict:
+    """Lookup geolocation using a free API (no key) with basic caching."""
+    if not ip or ip == '127.0.0.1' or ip.startswith('192.168.') or ip.startswith('10.'):
+        return {"city": "Local", "region": "", "country": "", "latitude": None, "longitude": None}
+    cached = GEO_CACHE.get(ip)
+    if cached and (datetime.utcnow() - cached.get('cached_at', datetime.utcnow())) < timedelta(days=1):
+        return cached['data']
+    try:
+        # ipapi.co is free and does not require a key
+        resp = requests.get(f"https://ipapi.co/{ip}/json/", timeout=5)
+        data = resp.json() if resp.ok else {}
+        geo = {
+            "city": data.get("city"),
+            "region": data.get("region"),
+            "country": data.get("country_name") or data.get("country"),
+            "latitude": data.get("latitude"),
+            "longitude": data.get("longitude"),
+        }
+        GEO_CACHE[ip] = {"data": geo, "cached_at": datetime.utcnow()}
+        return geo
+    except Exception:
+        return {"city": None, "region": None, "country": None, "latitude": None, "longitude": None}
+
+@app.before_request
+def track_active_user():
+    """Track active users by IP and last seen time; enrich with geo data lazily."""
+    try:
+        # Skip tracking for admin endpoints to reduce noise if desired
+        path = request.path or ''
+        if path.startswith('/admin'):  # still track normal app usage
+            return
+        ip = _get_client_ip(request)
+        now = datetime.utcnow()
+        info = ACTIVE_USERS.get(ip, {})
+        if not info.get('geo'):
+            info['geo'] = _geo_lookup(ip)
+        info['last_seen'] = now.isoformat()
+        info['ip'] = ip
+        ACTIVE_USERS[ip] = info
+        # Clean up stale entries
+        cutoff = now - timedelta(minutes=ACTIVE_WINDOW_MINUTES)
+        stale = [k for k, v in ACTIVE_USERS.items() if datetime.fromisoformat(v['last_seen']) < cutoff]
+        for k in stale:
+            del ACTIVE_USERS[k]
+    except Exception:
+        # Never block requests due to tracking errors
+        pass
 
 def validate_feedback_data(data):
     """Simple validation for feedback data"""
@@ -141,6 +209,59 @@ def admin_logout():
         return jsonify({
             'success': False,
             'message': 'Logout failed'
+        }), 500
+
+@app.route('/admin/status', methods=['GET'])
+def admin_status():
+    """Simple admin status endpoint for frontend."""
+    try:
+        session_token = session.get('admin_token')
+        if not session_token:
+            return jsonify({"success": False}), 200
+        verification = verify_admin_session(session_token)
+        if verification.get('success'):
+            return jsonify({"success": True, "admin_email": verification.get('admin_email')}), 200
+        return jsonify({"success": False}), 200
+    except Exception:
+        return jsonify({"success": False}), 200
+
+@app.route('/admin/active_users', methods=['GET'])
+@require_admin
+def get_active_users():
+    """Return currently active users (seen within ACTIVE_WINDOW_MINUTES)."""
+    try:
+        now = datetime.utcnow()
+        cutoff = now - timedelta(minutes=ACTIVE_WINDOW_MINUTES)
+        users = []
+        for ip, info in ACTIVE_USERS.items():
+            try:
+                last_seen_dt = datetime.fromisoformat(info.get('last_seen'))
+            except Exception:
+                continue
+            if last_seen_dt >= cutoff:
+                geo = info.get('geo', {}) or {}
+                users.append({
+                    'ip': ip,
+                    'last_seen': info.get('last_seen'),
+                    'city': geo.get('city'),
+                    'region': geo.get('region'),
+                    'country': geo.get('country'),
+                    'latitude': geo.get('latitude'),
+                    'longitude': geo.get('longitude')
+                })
+        # Sort by last_seen desc
+        users.sort(key=lambda u: u.get('last_seen') or '', reverse=True)
+        return jsonify({
+            'success': True,
+            'active_window_minutes': ACTIVE_WINDOW_MINUTES,
+            'count': len(users),
+            'data': users
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting active users: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to get active users'
         }), 500
 
 @app.route('/admin/verify', methods=['GET'])
