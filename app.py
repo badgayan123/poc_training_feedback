@@ -124,6 +124,10 @@ def validate_feedback_data(data):
         except Exception:
             errors.append('invalid student_name')
     
+    # Subject name is required
+    if not data.get('subject_name') or not isinstance(data.get('subject_name'), str) or not data.get('subject_name').strip():
+        errors.append('subject_name is required')
+
     # Check quantitative data
     quantitative = data.get('quantitative', {})
     if not quantitative:
@@ -391,6 +395,10 @@ def submit_feedback():
         # Normalize student name to uppercase defensively
         if feedback_data.get('student_name'):
             feedback_data['student_name'] = (feedback_data['student_name'] or '').strip().upper()
+
+        # Normalize training_id to uppercase defensively
+        if feedback_data.get('training_id'):
+            feedback_data['training_id'] = (feedback_data['training_id'] or '').strip().upper()
 
         # Add timestamp if not present
         if 'date' not in feedback_data:

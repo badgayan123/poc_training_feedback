@@ -71,12 +71,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
-                        <input type="text" id="training_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="training_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" style="text-transform: uppercase;">
+                        <p class="text-xs text-gray-500 mt-1">Training ID will be converted to CAPITAL letters.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Student Name *</label>
                         <input type="text" id="student_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" style="text-transform: uppercase;" pattern="[A-Z .'-]+" title="Use CAPITAL letters only (A-Z, spaces, . ' -)">
                         <p class="text-xs text-gray-500 mt-1">Enter name in CAPITAL letters only.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
+                        <input type="text" id="subject_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Trainer Name *</label>
@@ -1284,7 +1289,18 @@
                     const upper = value.toUpperCase();
                     if (value !== upper) {
                         this.value = upper;
-                        // best-effort keep cursor position
+                        try { this.setSelectionRange(cursorPos, cursorPos); } catch (_) {}
+                    }
+                });
+            }
+            const trainingInput = document.getElementById('training_id');
+            if (trainingInput) {
+                trainingInput.addEventListener('input', function() {
+                    const cursorPos = this.selectionStart;
+                    const value = this.value || '';
+                    const upper = value.toUpperCase();
+                    if (value !== upper) {
+                        this.value = upper;
                         try { this.setSelectionRange(cursorPos, cursorPos); } catch (_) {}
                     }
                 });
@@ -1306,9 +1322,14 @@
                 return;
             }
 
+            const trainingIdInput = document.getElementById('training_id');
+            const trainingIdUpper = (trainingIdInput.value || '').trim().toUpperCase();
+            trainingIdInput.value = trainingIdUpper;
+
             const formData = {
-                training_id: document.getElementById('training_id').value,
+                training_id: trainingIdUpper,
                 student_name: upperName,
+                subject_name: document.getElementById('subject_name').value,
                 trainer_name: document.getElementById('trainer_name').value,
                 training_date_from: document.getElementById('training_date_from').value,
                 training_date_to: document.getElementById('training_date_to').value,
@@ -1722,6 +1743,7 @@
                     const studentName = feedback.student_name || `Student ${index + 1}`;
                     const feedbackDate = feedback.date ? new Date(feedback.date).toLocaleDateString() : 'Date not available';
                     const trainerName = feedback.trainer_name || 'Not specified';
+                    const subjectName = feedback.subject_name || 'Not specified';
                     
                     html += `
                         <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
@@ -1732,6 +1754,7 @@
                                 </div>
                                 <div class="text-sm text-gray-500 mb-1">${feedbackDate}</div>
                                 <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
+                                <div class="text-xs text-gray-500 mt-1">Subject: ${subjectName}</div>
                                 <div class="text-xs text-gray-400 mt-1">Click to view details</div>
                             </div>
                         </div>
@@ -1761,6 +1784,7 @@
             const studentName = feedback.student_name || `Student ${index + 1}`;
             const feedbackDate = feedback.date ? new Date(feedback.date).toLocaleDateString() : 'Date not available';
             const trainerName = feedback.trainer_name || 'Not specified';
+            const subjectName = feedback.subject_name || 'Not specified';
             
             let detailsHtml = `
                 <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1771,7 +1795,7 @@
                                 <button onclick="closeStudentDetails()" class="text-gray-500 hover:text-gray-700 text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors duration-200 font-medium">✕ Close</button>
                             </div>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
                                 <div>
                                     <div class="text-sm font-medium text-gray-600">Feedback Date</div>
                                     <div class="text-lg font-semibold">${feedbackDate}</div>
@@ -1783,6 +1807,10 @@
                                 <div>
                                     <div class="text-sm font-medium text-gray-600">Training ID</div>
                                     <div class="text-lg font-semibold">${feedback.training_id}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-600">Subject</div>
+                                    <div class="text-lg font-semibold">${subjectName}</div>
                                 </div>
                             </div>
                             
