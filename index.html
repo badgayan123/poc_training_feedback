@@ -425,11 +425,38 @@
         <!-- Database Dashboard Section (Admin Only) -->
         <div id="database-section" class="hidden bg-white rounded-lg shadow-md p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Database Dashboard</h2>
-            <div class="mb-4">
+            
+            <!-- Controls Row -->
+            <div class="mb-6 flex flex-wrap gap-4 items-center">
                 <button onclick="loadDatabaseData()" class="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
                     Refresh Data
                 </button>
+                
+                <!-- Sort Controls -->
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Sort by Date:</label>
+                    <button onclick="sortDatabaseData('latest')" id="sort-latest-btn" class="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Latest to Oldest
+                    </button>
+                    <button onclick="sortDatabaseData('oldest')" id="sort-oldest-btn" class="px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Oldest to Latest
+                    </button>
+                </div>
+                
+                <!-- Trainer Filter -->
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Filter by Trainer:</label>
+                    <select id="trainer-filter" onchange="filterByTrainer()" class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="">All Trainers</option>
+                    </select>
+                </div>
+                
                 <span id="database-loading" class="ml-4 text-gray-500 hidden">Loading...</span>
+            </div>
+            
+            <!-- Results Counter -->
+            <div class="mb-4 text-sm text-gray-600">
+                <span id="database-results-count">Click "Refresh Data" to load entries</span>
             </div>
             
             <div class="overflow-x-auto">
@@ -2022,6 +2049,10 @@
             return csvContent;
         }
 
+        // Global variable to store all database data
+        let allDatabaseData = [];
+        let currentSortOrder = 'latest';
+
         // Load database data
         async function loadDatabaseData() {
             const loadingElement = document.getElementById('database-loading');
@@ -2037,8 +2068,9 @@
                 const response = await axios.get(`${API_BASE_URL}/admin/database_dashboard`, { withCredentials: true });
                 
                 if (response.data.success) {
-                    const feedbacks = response.data.data;
-                    displayDatabaseData(feedbacks);
+                    allDatabaseData = response.data.data;
+                    populateTrainerFilter(allDatabaseData);
+                    displayDatabaseData(allDatabaseData);
                 } else {
                     throw new Error(response.data.message || 'Failed to load data');
                 }
@@ -2052,22 +2084,95 @@
             }
         }
 
+        // Populate trainer filter dropdown
+        function populateTrainerFilter(feedbacks) {
+            const trainerFilter = document.getElementById('trainer-filter');
+            
+            // Get unique trainer names
+            const uniqueTrainers = [...new Set(feedbacks.map(f => f.trainer_name).filter(name => name && name !== 'N/A'))];
+            uniqueTrainers.sort();
+            
+            // Clear existing options except "All Trainers"
+            trainerFilter.innerHTML = '<option value="">All Trainers</option>';
+            
+            // Add trainer options
+            uniqueTrainers.forEach(trainer => {
+                const option = document.createElement('option');
+                option.value = trainer;
+                option.textContent = trainer;
+                trainerFilter.appendChild(option);
+            });
+        }
+
+        // Sort database data
+        function sortDatabaseData(order) {
+            currentSortOrder = order;
+            
+            // Update button styles
+            document.getElementById('sort-latest-btn').className = order === 'latest' ? 
+                'px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500' :
+                'px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500';
+            
+            document.getElementById('sort-oldest-btn').className = order === 'oldest' ? 
+                'px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500' :
+                'px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500';
+            
+            // Get current filtered data
+            const currentFilter = document.getElementById('trainer-filter').value;
+            let dataToSort = currentFilter ? 
+                allDatabaseData.filter(f => f.trainer_name === currentFilter) : 
+                [...allDatabaseData];
+            
+            // Sort the data
+            dataToSort.sort((a, b) => {
+                const dateA = new Date(a.timestamp || a.submission_date || 0);
+                const dateB = new Date(b.timestamp || b.submission_date || 0);
+                
+                if (order === 'latest') {
+                    return dateB - dateA; // Latest first
+                } else {
+                    return dateA - dateB; // Oldest first
+                }
+            });
+            
+            displayDatabaseData(dataToSort);
+        }
+
+        // Filter by trainer
+        function filterByTrainer() {
+            const selectedTrainer = document.getElementById('trainer-filter').value;
+            
+            let filteredData = selectedTrainer ? 
+                allDatabaseData.filter(f => f.trainer_name === selectedTrainer) : 
+                [...allDatabaseData];
+            
+            // Apply current sort order
+            filteredData.sort((a, b) => {
+                const dateA = new Date(a.timestamp || a.submission_date || 0);
+                const dateB = new Date(b.timestamp || b.submission_date || 0);
+                
+                if (currentSortOrder === 'latest') {
+                    return dateB - dateA;
+                } else {
+                    return dateA - dateB;
+                }
+            });
+            
+            displayDatabaseData(filteredData);
+        }
+
         // Display database data in table
         function displayDatabaseData(feedbacks) {
             const tableBody = document.getElementById('database-table-body');
+            const resultsCount = document.getElementById('database-results-count');
+            
+            // Update results counter
+            resultsCount.textContent = `Showing ${feedbacks.length} entries`;
             
             if (feedbacks.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No feedback data found</td></tr>';
                 return;
             }
-            
-            // Sort by training_id and then by submission date
-            feedbacks.sort((a, b) => {
-                if (a.training_id !== b.training_id) {
-                    return a.training_id.localeCompare(b.training_id);
-                }
-                return new Date(b.timestamp || b.submission_date || 0) - new Date(a.timestamp || a.submission_date || 0);
-            });
             
             let html = '';
             feedbacks.forEach(feedback => {
