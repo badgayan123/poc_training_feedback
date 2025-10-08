@@ -479,6 +479,48 @@ def admin_get_feedback():
             'data': []
         }), 500
 
+@app.route('/admin/database_dashboard', methods=['GET'])
+@require_admin
+def get_database_dashboard_data():
+    """
+    Admin-protected endpoint to retrieve database dashboard data
+    Returns training ID, trainer name, subject name, student name, and submission date
+    """
+    try:
+        # Get all feedback data
+        result = get_feedback()
+        
+        if result['success']:
+            # Extract only the fields needed for database dashboard
+            dashboard_data = []
+            for feedback in result['data']:
+                dashboard_entry = {
+                    'training_id': feedback.get('training_id', 'N/A'),
+                    'trainer_name': feedback.get('trainer_name', 'N/A'),
+                    'subject_name': feedback.get('subject_name', 'N/A'),
+                    'student_name': feedback.get('student_name', 'Anonymous'),
+                    'submission_date': feedback.get('date', 'N/A'),
+                    'timestamp': feedback.get('timestamp', 'N/A')
+                }
+                dashboard_data.append(dashboard_entry)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Retrieved {len(dashboard_data)} database entries',
+                'data': dashboard_data,
+                'count': len(dashboard_data)
+            }), 200
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
+        logger.error(f"Error in database dashboard: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Internal server error: {str(e)}',
+            'data': []
+        }), 500
+
 @app.route('/analyze_feedback', methods=['POST'])
 def analyze_feedback():
     """
