@@ -30,11 +30,11 @@
         <div class="flex justify-center mb-8">
             <div class="bg-white rounded-lg shadow-md p-1">
                 <button onclick="showSection('form')" id="form-btn" class="px-6 py-2 rounded-md bg-blue-500 text-white font-medium">Submit Feedback</button>
-                <button onclick="showSection('analysis')" id="analysis-btn" class="px-6 py-2 rounded-md bg-green-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">AI Analysis</button>
-                <button onclick="showSection('dashboard')" id="dashboard-btn" class="px-6 py-2 rounded-md bg-purple-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Dashboard</button>
-                <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">Student Feedback</button>
+                <button onclick="showSection('analysis')" id="analysis-btn" class="px-6 py-2 rounded-md bg-green-500 text-white font-medium ml-2 hidden">AI Analysis</button>
+                <button onclick="showSection('dashboard')" id="dashboard-btn" class="px-6 py-2 rounded-md bg-purple-500 text-white font-medium ml-2 hidden">Dashboard</button>
+                <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 hidden">Student Feedback</button>
                 <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
-                <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 opacity-50 cursor-not-allowed">User Dashboard</button>
+                <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 hidden">User Dashboard</button>
                 <button onclick="showSection('database')" id="database-btn" class="px-6 py-2 rounded-md bg-teal-500 text-white font-medium ml-2 hidden">Database Dashboard</button>
             </div>
         </div>
@@ -532,19 +532,19 @@
 
         // Enable admin features
         function enableAdminFeatures() {
-            document.getElementById('analysis-btn').classList.remove('opacity-50', 'cursor-not-allowed');
-            document.getElementById('dashboard-btn').classList.remove('opacity-50', 'cursor-not-allowed');
-            document.getElementById('student-feedback-btn').classList.remove('opacity-50', 'cursor-not-allowed');
-            document.getElementById('users-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('analysis-btn').classList.remove('hidden');
+            document.getElementById('dashboard-btn').classList.remove('hidden');
+            document.getElementById('student-feedback-btn').classList.remove('hidden');
+            document.getElementById('users-btn').classList.remove('hidden');
             document.getElementById('database-btn').classList.remove('hidden');
         }
 
         // Disable admin features
         function disableAdminFeatures() {
-            document.getElementById('analysis-btn').classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('dashboard-btn').classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('student-feedback-btn').classList.add('opacity-50', 'cursor-not-allowed');
-            document.getElementById('users-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('analysis-btn').classList.add('hidden');
+            document.getElementById('dashboard-btn').classList.add('hidden');
+            document.getElementById('student-feedback-btn').classList.add('hidden');
+            document.getElementById('users-btn').classList.add('hidden');
             document.getElementById('database-btn').classList.add('hidden');
         }
 
@@ -637,7 +637,7 @@
 
         // Check if admin is logged in
         function isAdminLoggedIn() {
-            return !document.getElementById('analysis-btn').classList.contains('opacity-50');
+            return !document.getElementById('analysis-btn').classList.contains('hidden');
         }
 
         // Admin login
