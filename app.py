@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
-from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query
+from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query, insert_user, get_users, get_user_by_credentials, update_user, delete_user
 from config import Config
 # Removed feedback_form import - using inline validation
 from openai_analysis import analyze_text_feedback, analyze_comprehensive_training_feedback
@@ -338,6 +338,245 @@ def admin_test():
         return jsonify({
             'success': False,
             'message': f'Admin test failed: {str(e)}'
+        }), 500
+
+# User Authentication Endpoints
+@app.route('/user/login', methods=['POST'])
+def user_login():
+    """User login endpoint"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({
+                'success': False,
+                'message': 'Username and password are required'
+            }), 400
+        
+        username = data['username']
+        password = data['password']
+        
+        # Authenticate user
+        result = get_user_by_credentials(username, password)
+        
+        if result['success']:
+            # Store user info in Flask session
+            session['user_id'] = result['data']['_id']
+            session['username'] = result['data']['username']
+            session['university_name'] = result['data']['university_name']
+            session['training_id'] = result['data']['training_id']
+            
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user_data': {
+                    'username': result['data']['username'],
+                    'university_name': result['data']['university_name'],
+                    'training_id': result['data']['training_id']
+                }
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': result['message']
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Error in user login: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Login failed due to server error'
+        }), 500
+
+@app.route('/user/logout', methods=['POST'])
+def user_logout():
+    """User logout endpoint"""
+    try:
+        # Clear Flask session
+        session.pop('user_id', None)
+        session.pop('username', None)
+        session.pop('university_name', None)
+        session.pop('training_id', None)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Logout successful'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in user logout: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Logout failed'
+        }), 500
+
+@app.route('/user/status', methods=['GET'])
+def user_status():
+    """Check user login status"""
+    try:
+        if 'user_id' in session:
+            return jsonify({
+                'success': True,
+                'user_data': {
+                    'username': session.get('username'),
+                    'university_name': session.get('university_name'),
+                    'training_id': session.get('training_id')
+                }
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Not logged in'
+            }), 401
+    except Exception as e:
+        logger.error(f"Error checking user status: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Status check failed'
+        }), 500
+
+# User Management Endpoints (Admin only)
+@app.route('/admin/users', methods=['GET'])
+@require_admin
+def admin_get_users():
+    """Get all users (admin only)"""
+    try:
+        result = get_users()
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
+        logger.error(f"Error getting users: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to get users: {str(e)}'
+        }), 500
+
+@app.route('/admin/users', methods=['POST'])
+@require_admin
+def admin_add_user():
+    """Add new user (admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No data provided'
+            }), 400
+        
+        # Validate required fields
+        required_fields = ['username', 'password', 'university_name', 'training_id']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({
+                    'success': False,
+                    'message': f'{field} is required'
+                }), 400
+        
+        # Add user
+        result = insert_user(data)
+        
+        if result['success']:
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error adding user: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to add user: {str(e)}'
+        }), 500
+
+@app.route('/admin/users/<user_id>', methods=['PUT'])
+@require_admin
+def admin_update_user(user_id):
+    """Update user (admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No data provided'
+            }), 400
+        
+        # Update user
+        result = update_user(user_id, data)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error updating user: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to update user: {str(e)}'
+        }), 500
+
+@app.route('/admin/users/<user_id>', methods=['DELETE'])
+@require_admin
+def admin_delete_user(user_id):
+    """Delete user (admin only)"""
+    try:
+        result = delete_user(user_id)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to delete user: {str(e)}'
+        }), 500
+
+@app.route('/admin/users/export', methods=['GET'])
+@require_admin
+def admin_export_users():
+    """Export users as CSV (admin only)"""
+    try:
+        result = get_users()
+        
+        if not result['success']:
+            return jsonify(result), 500
+        
+        users = result['data']
+        
+        # Group users by university
+        grouped_users = {}
+        for user in users:
+            university = user.get('university_name', 'Unknown')
+            if university not in grouped_users:
+                grouped_users[university] = []
+            grouped_users[university].append(user)
+        
+        # Create CSV content
+        csv_content = "University,Username,Password,Training ID,Created At\n"
+        for university, user_list in grouped_users.items():
+            for user in user_list:
+                csv_content += f"{university},{user.get('username', '')},{user.get('password', '')},{user.get('training_id', '')},{user.get('created_at', '')}\n"
+        
+        return jsonify({
+            'success': True,
+            'message': 'Users exported successfully',
+            'csv_content': csv_content,
+            'grouped_users': grouped_users
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error exporting users: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to export users: {str(e)}'
         }), 500
 
 @app.route('/submit_feedback', methods=['POST'])

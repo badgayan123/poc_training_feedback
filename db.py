@@ -219,3 +219,213 @@ def get_feedback_by_query(query):
             'success': False,
             'message': f'Failed to retrieve feedback: {str(e)}'
         }
+
+# User Management Functions
+def insert_user(user_data):
+    """
+    Insert user data into MongoDB
+    
+    Args:
+        user_data (dict): User data to insert
+        
+    Returns:
+        dict: Result with success status and inserted_id or error message
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - simulating user insertion")
+            return {"success": True, "inserted_id": "simulated_user_id", "message": "Offline mode - user not saved"}
+        
+        # Check if username already exists
+        existing_user = db_manager.collection.find_one({'username': user_data['username']})
+        if existing_user:
+            return {
+                'success': False,
+                'message': 'Username already exists'
+            }
+        
+        # Add timestamp
+        user_data['created_at'] = datetime.utcnow()
+        user_data['is_active'] = True
+        
+        # Insert the document
+        result = db_manager.collection.insert_one(user_data)
+        
+        logger.info(f"User inserted with ID: {result.inserted_id}")
+        return {
+            'success': True,
+            'message': 'User created successfully',
+            'inserted_id': str(result.inserted_id)
+        }
+    except Exception as e:
+        logger.error(f"Error inserting user: {e}")
+        return {
+            'success': False,
+            'message': f'Failed to insert user: {str(e)}'
+        }
+
+def get_users():
+    """
+    Retrieve all users from MongoDB
+    
+    Returns:
+        dict: Result with success status and user data or error message
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - returning empty user list")
+            return {"success": True, "data": [], "message": "Offline mode - no data available"}
+        
+        # Execute query
+        cursor = db_manager.collection.find({'is_active': True})
+        users = []
+        
+        for doc in cursor:
+            # Convert ObjectId to string for JSON serialization
+            doc['_id'] = str(doc['_id'])
+            users.append(doc)
+        
+        logger.info(f"Retrieved {len(users)} user records")
+        return {
+            'success': True,
+            'message': f'Retrieved {len(users)} user records',
+            'data': users,
+            'count': len(users)
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving users: {e}")
+        return {
+            'success': False,
+            'message': f'Failed to retrieve users: {str(e)}',
+            'data': []
+        }
+
+def get_user_by_credentials(username, password):
+    """
+    Get user by username and password for authentication
+    
+    Args:
+        username (str): Username
+        password (str): Password
+        
+    Returns:
+        dict: Result with success status and user data or error message
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - user authentication failed")
+            return {"success": False, "message": "Database offline - authentication unavailable"}
+        
+        # Find user by username
+        user = db_manager.collection.find_one({
+            'username': username,
+            'is_active': True
+        })
+        
+        if not user:
+            return {
+                'success': False,
+                'message': 'Invalid username or password'
+            }
+        
+        # Check password (simple comparison for now)
+        if user.get('password') != password:
+            return {
+                'success': False,
+                'message': 'Invalid username or password'
+            }
+        
+        # Convert ObjectId to string
+        user['_id'] = str(user['_id'])
+        
+        logger.info(f"User authenticated successfully: {username}")
+        return {
+            'success': True,
+            'message': 'Authentication successful',
+            'data': user
+        }
+    except Exception as e:
+        logger.error(f"Error authenticating user: {e}")
+        return {
+            'success': False,
+            'message': f'Authentication failed: {str(e)}'
+        }
+
+def update_user(user_id, update_data):
+    """
+    Update user data
+    
+    Args:
+        user_id (str): User ID
+        update_data (dict): Data to update
+        
+    Returns:
+        dict: Result with success status
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - user update failed")
+            return {"success": False, "message": "Database offline - update unavailable"}
+        
+        # Update the document
+        result = db_manager.collection.update_one(
+            {'_id': user_id},
+            {'$set': update_data}
+        )
+        
+        if result.modified_count > 0:
+            logger.info(f"User updated successfully: {user_id}")
+            return {
+                'success': True,
+                'message': 'User updated successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'User not found or no changes made'
+            }
+    except Exception as e:
+        logger.error(f"Error updating user: {e}")
+        return {
+            'success': False,
+            'message': f'Failed to update user: {str(e)}'
+        }
+
+def delete_user(user_id):
+    """
+    Soft delete user (set is_active to False)
+    
+    Args:
+        user_id (str): User ID
+        
+    Returns:
+        dict: Result with success status
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - user deletion failed")
+            return {"success": False, "message": "Database offline - deletion unavailable"}
+        
+        # Soft delete by setting is_active to False
+        result = db_manager.collection.update_one(
+            {'_id': user_id},
+            {'$set': {'is_active': False}}
+        )
+        
+        if result.modified_count > 0:
+            logger.info(f"User deleted successfully: {user_id}")
+            return {
+                'success': True,
+                'message': 'User deleted successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'User not found'
+            }
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}")
+        return {
+            'success': False,
+            'message': f'Failed to delete user: {str(e)}'
+        }

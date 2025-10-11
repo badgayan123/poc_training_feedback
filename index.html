@@ -35,6 +35,7 @@
                 <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 hidden">Student Feedback</button>
                 <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
                 <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 hidden">User Dashboard</button>
+                <button onclick="showSection('user-management')" id="user-management-btn" class="px-6 py-2 rounded-md bg-pink-500 text-white font-medium ml-2 hidden">User Management</button>
                 <button onclick="showSection('database')" id="database-btn" class="px-6 py-2 rounded-md bg-teal-500 text-white font-medium ml-2 hidden">Database Dashboard</button>
             </div>
         </div>
@@ -63,6 +64,30 @@
             <div id="admin-login-status" class="mt-4"></div>
         </div>
 
+        <!-- User Login Section -->
+        <div id="user-login-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">User Login</h2>
+            <form id="user-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="user-username-input" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="user-password-input" required class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter password">
+                        <button type="button" onclick="togglePasswordVisibility('user-password-input')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-r-md transition-colors duration-200">
+                            <span id="user-password-eye">👁 Show</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                    Login
+                </button>
+            </form>
+            <div id="user-login-status" class="mt-4"></div>
+        </div>
+
         <!-- Feedback Form Section -->
         <div id="form-section" class="bg-white rounded-lg shadow-md p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Submit Training Feedback</h2>
@@ -79,6 +104,10 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Student Name *</label>
                         <input type="text" id="student_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" style="text-transform: uppercase;" pattern="[A-Z .'-]+" title="Use CAPITAL letters only (A-Z, spaces, . ' -)">
                         <p class="text-xs text-gray-500 mt-1">Enter name in CAPITAL letters only.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
+                        <input type="text" id="university_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
@@ -422,6 +451,81 @@
             <div id="users-content"></div>
         </div>
 
+        <!-- User Management Section (Admin Only) -->
+        <div id="user-management-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
+            
+            <!-- Tabs for Add User and Manage Users -->
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8">
+                        <button onclick="showUserManagementTab('add-user')" id="add-user-tab" class="py-2 px-1 border-b-2 border-pink-500 font-medium text-sm text-pink-600">
+                            Add User
+                        </button>
+                        <button onclick="showUserManagementTab('manage-users')" id="manage-users-tab" class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            Manage Users
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Add User Tab Content -->
+            <div id="add-user-content" class="space-y-6">
+                <h3 class="text-lg font-medium text-gray-900">Add New User</h3>
+                <form id="add-user-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                            <input type="text" id="new-username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter username">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                            <input type="password" id="new-password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter password">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
+                            <input type="text" id="new-university" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter university name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
+                            <input type="text" id="new-training-id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Enter training ID" style="text-transform: uppercase;">
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium">
+                        Add User
+                    </button>
+                </form>
+                <div id="add-user-status" class="mt-4"></div>
+            </div>
+
+            <!-- Manage Users Tab Content -->
+            <div id="manage-users-content" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900">Manage Users</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="loadUsers()" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                            Refresh
+                        </button>
+                        <button onclick="exportUsers()" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 font-medium">
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="users-loading" class="flex items-center text-sm text-gray-600 mb-3 hidden">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Loading users...
+                </div>
+                
+                <div id="users-list" class="space-y-4">
+                    <!-- Users will be loaded here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Database Dashboard Section (Admin Only) -->
         <div id="database-section" class="hidden bg-white rounded-lg shadow-md p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Database Dashboard</h2>
@@ -495,7 +599,7 @@
         let lastUsersCache = null;
         function showSection(section) {
             // Check if trying to access admin-protected sections
-            if (['analysis', 'dashboard', 'student', 'database'].includes(section)) {
+            if (['analysis', 'dashboard', 'student', 'database', 'user-management'].includes(section)) {
                 if (!isAdminLoggedIn()) {
                     alert('Please login as admin to access this section');
                     return;
@@ -508,7 +612,9 @@
             document.getElementById('dashboard-section').classList.add('hidden');
             document.getElementById('student-section').classList.add('hidden');
             document.getElementById('admin-section').classList.add('hidden');
+            document.getElementById('user-login-section').classList.add('hidden');
             const usersSection = document.getElementById('users-section'); if (usersSection) usersSection.classList.add('hidden');
+            const userManagementSection = document.getElementById('user-management-section'); if (userManagementSection) userManagementSection.classList.add('hidden');
             const databaseSection = document.getElementById('database-section'); if (databaseSection) databaseSection.classList.add('hidden');
 
             // Clear any existing auto-refresh timer when switching sections
@@ -536,13 +642,33 @@
                 if (response.data.success) {
                     showAdminStatus(response.data.admin_email);
                     enableAdminFeatures();
+                    // Admin is logged in, show form section
+                    showSection('form');
                 } else {
                     hideAdminStatus();
                     disableAdminFeatures();
+                    // Check if user is logged in
+                    const userLoggedIn = await checkUserStatus();
+                    if (userLoggedIn) {
+                        // User is logged in, show form section
+                        showSection('form');
+                    } else {
+                        // No one is logged in, show user login
+                        showSection('user-login');
+                    }
                 }
             } catch (error) {
                 hideAdminStatus();
                 disableAdminFeatures();
+                // Check if user is logged in
+                const userLoggedIn = await checkUserStatus();
+                if (userLoggedIn) {
+                    // User is logged in, show form section
+                    showSection('form');
+                } else {
+                    // No one is logged in, show user login
+                    showSection('user-login');
+                }
             }
         }
 
@@ -563,6 +689,7 @@
             document.getElementById('dashboard-btn').classList.remove('hidden');
             document.getElementById('student-feedback-btn').classList.remove('hidden');
             document.getElementById('users-btn').classList.remove('hidden');
+            document.getElementById('user-management-btn').classList.remove('hidden');
             document.getElementById('database-btn').classList.remove('hidden');
         }
 
@@ -572,6 +699,7 @@
             document.getElementById('dashboard-btn').classList.add('hidden');
             document.getElementById('student-feedback-btn').classList.add('hidden');
             document.getElementById('users-btn').classList.add('hidden');
+            document.getElementById('user-management-btn').classList.add('hidden');
             document.getElementById('database-btn').classList.add('hidden');
         }
 
@@ -1394,6 +1522,7 @@
             const formData = {
                 training_id: trainingIdUpper,
                 student_name: upperName,
+                university_name: document.getElementById('university_name').value,
                 subject_name: document.getElementById('subject_name').value,
                 trainer_name: document.getElementById('trainer_name').value,
                 training_date_from: document.getElementById('training_date_from').value,
@@ -1433,6 +1562,10 @@
                 if (response.data.success) {
                     showStatus('form-status', 'success', 'Feedback submitted successfully!');
                     document.getElementById('feedback-form').reset();
+                    // Re-populate user data if user is logged in
+                    if (window.userData) {
+                        populateUserData();
+                    }
                 } else {
                     const msg = response.data.message || 'Submission failed';
                     showStatus('form-status', 'error', msg);
@@ -2198,9 +2331,277 @@
             tableBody.innerHTML = html;
         }
 
+        // User Management Functions
+        function showUserManagementTab(tab) {
+            // Hide all tab contents
+            document.getElementById('add-user-content').classList.add('hidden');
+            document.getElementById('manage-users-content').classList.add('hidden');
+            
+            // Remove active styling from all tabs
+            document.getElementById('add-user-tab').classList.remove('border-pink-500', 'text-pink-600');
+            document.getElementById('add-user-tab').classList.add('border-transparent', 'text-gray-500');
+            document.getElementById('manage-users-tab').classList.remove('border-pink-500', 'text-pink-600');
+            document.getElementById('manage-users-tab').classList.add('border-transparent', 'text-gray-500');
+            
+            // Show selected tab content and add active styling
+            if (tab === 'add-user') {
+                document.getElementById('add-user-content').classList.remove('hidden');
+                document.getElementById('add-user-tab').classList.add('border-pink-500', 'text-pink-600');
+                document.getElementById('add-user-tab').classList.remove('border-transparent', 'text-gray-500');
+            } else if (tab === 'manage-users') {
+                document.getElementById('manage-users-content').classList.remove('hidden');
+                document.getElementById('manage-users-tab').classList.add('border-pink-500', 'text-pink-600');
+                document.getElementById('manage-users-tab').classList.remove('border-transparent', 'text-gray-500');
+                loadUsers();
+            }
+        }
+
+        // Add user form submission
+        document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                username: document.getElementById('new-username').value,
+                password: document.getElementById('new-password').value,
+                university_name: document.getElementById('new-university').value,
+                training_id: document.getElementById('new-training-id').value.toUpperCase()
+            };
+            
+            try {
+                const response = await axios.post(`${API_BASE_URL}/admin/users`, formData, { withCredentials: true });
+                
+                if (response.data.success) {
+                    showStatus('add-user-status', 'User added successfully!', 'success');
+                    document.getElementById('add-user-form').reset();
+                } else {
+                    showStatus('add-user-status', response.data.message || 'Failed to add user', 'error');
+                }
+            } catch (error) {
+                showStatus('add-user-status', 'Error adding user: ' + error.message, 'error');
+            }
+        });
+
+        // Load users for management
+        async function loadUsers() {
+            const loadingEl = document.getElementById('users-loading');
+            const usersListEl = document.getElementById('users-list');
+            
+            loadingEl.classList.remove('hidden');
+            usersListEl.innerHTML = '';
+            
+            try {
+                const response = await axios.get(`${API_BASE_URL}/admin/users`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    displayUsers(response.data.data);
+                } else {
+                    usersListEl.innerHTML = '<p class="text-red-600">Error loading users: ' + response.data.message + '</p>';
+                }
+            } catch (error) {
+                usersListEl.innerHTML = '<p class="text-red-600">Error loading users: ' + error.message + '</p>';
+            } finally {
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        // Display users grouped by university
+        function displayUsers(users) {
+            const usersListEl = document.getElementById('users-list');
+            
+            // Group users by university
+            const groupedUsers = {};
+            users.forEach(user => {
+                const university = user.university_name || 'Unknown';
+                if (!groupedUsers[university]) {
+                    groupedUsers[university] = [];
+                }
+                groupedUsers[university].push(user);
+            });
+            
+            let html = '';
+            for (const [university, universityUsers] of Object.entries(groupedUsers)) {
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-lg text-gray-800 mb-3">${university} (${universityUsers.length} users)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Training ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                `;
+                
+                universityUsers.forEach(user => {
+                    const createdDate = new Date(user.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.password}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.training_id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${createdDate}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="deleteUser('${user._id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            usersListEl.innerHTML = html;
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user?')) {
+                return;
+            }
+            
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/admin/users/${userId}`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    showStatus('add-user-status', 'User deleted successfully!', 'success');
+                    loadUsers(); // Refresh the list
+                } else {
+                    showStatus('add-user-status', response.data.message || 'Failed to delete user', 'error');
+                }
+            } catch (error) {
+                showStatus('add-user-status', 'Error deleting user: ' + error.message, 'error');
+            }
+        }
+
+        // Export users as CSV
+        async function exportUsers() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/admin/users/export`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    // Create and download CSV file
+                    const blob = new Blob([response.data.csv_content], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'users_export.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showStatus('add-user-status', 'Users exported successfully!', 'success');
+                } else {
+                    showStatus('add-user-status', response.data.message || 'Failed to export users', 'error');
+                }
+            } catch (error) {
+                showStatus('add-user-status', 'Error exporting users: ' + error.message, 'error');
+            }
+        }
+
+        // User Login Functions
+        document.getElementById('user-login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                username: document.getElementById('user-username-input').value,
+                password: document.getElementById('user-password-input').value
+            };
+            
+            try {
+                const response = await axios.post(`${API_BASE_URL}/user/login`, formData, { withCredentials: true });
+                
+                if (response.data.success) {
+                    showStatus('user-login-status', 'Login successful!', 'success');
+                    // Store user data and show feedback form
+                    window.userData = response.data.user_data;
+                    populateUserData();
+                    showSection('form');
+                } else {
+                    showStatus('user-login-status', response.data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showStatus('user-login-status', 'Error logging in: ' + error.message, 'error');
+            }
+        });
+
+        // Check user login status
+        async function checkUserStatus() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/user/status`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    window.userData = response.data.user_data;
+                    populateUserData();
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Populate user data in feedback form
+        function populateUserData() {
+            if (window.userData) {
+                document.getElementById('training_id').value = window.userData.training_id || '';
+                document.getElementById('student_name').value = window.userData.username || '';
+                document.getElementById('university_name').value = window.userData.university_name || '';
+                
+                // Make fields read-only
+                document.getElementById('training_id').readOnly = true;
+                document.getElementById('student_name').readOnly = true;
+                document.getElementById('university_name').readOnly = true;
+                
+                // Add visual indication that fields are read-only
+                document.getElementById('training_id').classList.add('bg-gray-100');
+                document.getElementById('student_name').classList.add('bg-gray-100');
+                document.getElementById('university_name').classList.add('bg-gray-100');
+            }
+        }
+
+        // User logout
+        async function userLogout() {
+            try {
+                await axios.post(`${API_BASE_URL}/user/logout`, {}, { withCredentials: true });
+                window.userData = null;
+                
+                // Reset form fields
+                document.getElementById('training_id').value = '';
+                document.getElementById('student_name').value = '';
+                document.getElementById('university_name').value = '';
+                
+                // Make fields editable again
+                document.getElementById('training_id').readOnly = false;
+                document.getElementById('student_name').readOnly = false;
+                document.getElementById('university_name').readOnly = false;
+                
+                // Remove read-only styling
+                document.getElementById('training_id').classList.remove('bg-gray-100');
+                document.getElementById('student_name').classList.remove('bg-gray-100');
+                document.getElementById('university_name').classList.remove('bg-gray-100');
+                
+                showSection('user-login');
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        }
+
         // Check admin status on page load
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminStatus();
+            checkUserStatus();
             // Heartbeat every 60s to register activity
             setInterval(() => {
                 axios.get(`${API_BASE_URL}/heartbeat`, { withCredentials: true }).catch(() => {});
