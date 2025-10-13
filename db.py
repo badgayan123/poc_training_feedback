@@ -452,10 +452,22 @@ def create_feedback_form(form_data: dict) -> dict:
         university_name = (form_data.get('university_name') or '').strip()
         course_name = (form_data.get('course_name') or '').strip()
         training_id = (form_data.get('training_id') or '').strip().upper()
-        questions = form_data.get('questions') or []
+        # Normalize and validate questions
+        raw_questions = form_data.get('questions') or []
+        questions = []
+        for q in raw_questions:
+            qtype = (q.get('type') or '').strip().lower()
+            qtext = (q.get('text') or '').strip()
+            if not qtype or not qtext:
+                continue
+            if qtype not in ('choice', 'subjective'):
+                continue
+            questions.append({'type': qtype, 'text': qtext})
 
         if not university_name or not course_name or not training_id:
             return {"success": False, "message": "university_name, course_name, training_id are required"}
+        if not questions:
+            return {"success": False, "message": "At least one valid question is required"}
 
         # Validate question limits
         choice_count = sum(1 for q in questions if q.get('type') == 'choice')
