@@ -459,13 +459,15 @@ def create_feedback_form(form_data: dict) -> dict:
         # Normalize and validate questions
         raw_questions = form_data.get('questions') or []
         questions = []
-        for q in raw_questions:
-            qtype = (q.get('type') or '').strip().lower()
-            qtext = (q.get('text') or '').strip()
-            if not qtype or not qtext:
+        for idx, q in enumerate(raw_questions, start=1):
+            qtype_raw = (q.get('type') or '').strip().lower()
+            qtype = 'choice' if qtype_raw == 'choice' else ('subjective' if qtype_raw == 'subjective' else '')
+            if not qtype:
                 continue
-            if qtype not in ('choice', 'subjective'):
-                continue
+            qtext_raw = q.get('text')
+            qtext = (qtext_raw or '').strip()
+            if not qtext:
+                qtext = f"Question {idx}"
             questions.append({'type': qtype, 'text': qtext})
 
         # Relax validation: course_name is optional

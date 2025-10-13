@@ -593,6 +593,18 @@ def admin_export_users():
 def admin_create_form():
     try:
         data = request.get_json() or {}
+        # Mirror user-creation style validation: clear, field-wise checks
+        required_fields = ['university_name', 'training_id']
+        for field in required_fields:
+            if field not in data or not str(data.get(field) or '').strip():
+                return jsonify({'success': False, 'message': f'{field} is required'}), 400
+
+        # Questions must be an array with at least one item
+        questions = data.get('questions')
+        if not isinstance(questions, list) or len(questions) == 0:
+            return jsonify({'success': False, 'message': 'At least one question is required'}), 400
+
+        # Delegate to DB layer (which normalizes/limits and auto-fills empty question text)
         result = create_feedback_form(data)
         status = 201 if result.get('success') else 400
         return jsonify(result), status
