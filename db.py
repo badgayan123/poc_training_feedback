@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 from config import Config
 import logging
 from datetime import datetime
@@ -13,8 +12,6 @@ class DatabaseManager:
         self.client = None
         self.db = None
         self.collection = None
-        self.users_collection = None
-        self.forms_collection = None
         self.connect()
     
     def connect(self):
@@ -23,9 +20,6 @@ class DatabaseManager:
             self.client = MongoClient(Config.MONGO_URI, serverSelectionTimeoutMS=5000)
             self.db = self.client[Config.DATABASE_NAME]
             self.collection = self.db[Config.COLLECTION_NAME]
-            # Additional collections
-            self.users_collection = self.db.get_collection('users')
-            self.forms_collection = self.db.get_collection('feedback_forms')
             # Test the connection
             self.client.admin.command('ping')
             logger.info("Successfully connected to MongoDB")
@@ -35,8 +29,6 @@ class DatabaseManager:
             self.client = None
             self.db = None
             self.collection = None
-            self.users_collection = None
-            self.forms_collection = None
             logger.warning("Running in offline mode - database operations will be simulated")
     
     def close_connection(self):
@@ -245,7 +237,7 @@ def insert_user(user_data):
             return {"success": True, "inserted_id": "simulated_user_id", "message": "Offline mode - user not saved"}
         
         # Check if username already exists
-        existing_user = db_manager.users_collection.find_one({'username': user_data['username']}) if db_manager.users_collection else None
+        existing_user = db_manager.collection.find_one({'username': user_data['username']})
         if existing_user:
             return {
                 'success': False,
@@ -257,7 +249,7 @@ def insert_user(user_data):
         user_data['is_active'] = True
         
         # Insert the document
-        result = db_manager.users_collection.insert_one(user_data) if db_manager.users_collection else type('obj', (object,), {'inserted_id': 'simulated'})()
+        result = db_manager.collection.insert_one(user_data)
         
         logger.info(f"User inserted with ID: {result.inserted_id}")
         return {
@@ -285,7 +277,7 @@ def get_users():
             return {"success": True, "data": [], "message": "Offline mode - no data available"}
         
         # Execute query
-        cursor = db_manager.users_collection.find({'is_active': True}) if db_manager.users_collection else []
+        cursor = db_manager.collection.find({'is_active': True})
         users = []
         
         for doc in cursor:
@@ -325,10 +317,10 @@ def get_user_by_credentials(username, password):
             return {"success": False, "message": "Database offline - authentication unavailable"}
         
         # Find user by username
-        user = db_manager.users_collection.find_one({
+        user = db_manager.collection.find_one({
             'username': username,
             'is_active': True
-        }) if db_manager.users_collection else None
+        })
         
         if not user:
             return {
@@ -376,10 +368,10 @@ def update_user(user_id, update_data):
             return {"success": False, "message": "Database offline - update unavailable"}
         
         # Update the document
-        result = db_manager.users_collection.update_one(
-            {'_id': ObjectId(user_id)},
+        result = db_manager.collection.update_one(
+            {'_id': user_id},
             {'$set': update_data}
-        ) if db_manager.users_collection else type('obj', (object,), {'modified_count': 1})()
+        )
         
         if result.modified_count > 0:
             logger.info(f"User updated successfully: {user_id}")
@@ -415,10 +407,10 @@ def delete_user(user_id):
             return {"success": False, "message": "Database offline - deletion unavailable"}
         
         # Soft delete by setting is_active to False
-        result = db_manager.users_collection.update_one(
-            {'_id': ObjectId(user_id)},
+        result = db_manager.collection.update_one(
+            {'_id': user_id},
             {'$set': {'is_active': False}}
-        ) if db_manager.users_collection else type('obj', (object,), {'modified_count': 1})()
+        )
         
         if result.modified_count > 0:
             logger.info(f"User deleted successfully: {user_id}")
@@ -437,163 +429,3 @@ def delete_user(user_id):
             'success': False,
             'message': f'Failed to delete user: {str(e)}'
         }
-
-# -----------------------------
-# Feedback Forms (Admin-generated)
-# -----------------------------
-
-def create_feedback_form(form_data: dict) -> dict:
-    """
-    Create a feedback form definition with metadata and questions.
-    Expected keys: university_name, course_name, training_id, questions: [{type: 'choice'|'subjective', text: str}]
-    Limits: up to 10 choice, up to 10 subjective, max total 20.
-    """
-    try:
-        if db_manager.forms_collection is None:
-            logger.warning("Database offline - simulating form creation")
-            return {"success": True, "inserted_id": "simulated_form_id", "message": "Offline mode - form not saved"}
-
-        university_name = (form_data.get('university_name') or '').strip()
-        course_name = (form_data.get('course_name') or '').strip()
-        training_id = (form_data.get('training_id') or '').strip().upper()
-        # Normalize and validate questions
-        raw_questions = form_data.get('questions') or []
-        questions = []
-        for idx, q in enumerate(raw_questions, start=1):
-            qtype_raw = (q.get('type') or '').strip().lower()
-            qtype = 'choice' if qtype_raw == 'choice' else ('subjective' if qtype_raw == 'subjective' else '')
-            if not qtype:
-                continue
-            qtext_raw = q.get('text')
-            qtext = (qtext_raw or '').strip()
-            if not qtext:
-                qtext = f"Question {idx}"
-            questions.append({'type': qtype, 'text': qtext})
-
-        # Relax validation: course_name is optional
-        if not university_name or not training_id:
-            return {"success": False, "message": "university_name and training_id are required"}
-        if not questions:
-            return {"success": False, "message": "At least one valid question is required"}
-
-        # Validate question limits
-        choice_count = sum(1 for q in questions if q.get('type') == 'choice')
-        subj_count = sum(1 for q in questions if q.get('type') == 'subjective')
-        if choice_count > 10 or subj_count > 10 or len(questions) > 20:
-            return {"success": False, "message": "Exceeded question limits (max 10 choice, 10 subjective, 20 total)"}
-
-        doc = {
-            'university_name': university_name,
-            'course_name': course_name,
-            'training_id': training_id,
-            'questions': questions,
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow(),
-            'is_active': True
-        }
-
-        result = db_manager.forms_collection.insert_one(doc)
-        return {"success": True, "inserted_id": str(result.inserted_id)}
-    except Exception as e:
-        logger.error(f"Error creating feedback form: {e}")
-        return {"success": False, "message": f"Failed to create form: {str(e)}"}
-
-
-def list_feedback_forms(group_by_university: bool = False) -> dict:
-    try:
-        if db_manager.forms_collection is None:
-            return {"success": True, "data": []}
-        cursor = db_manager.forms_collection.find({}).sort('created_at', -1)
-        forms = []
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            forms.append(doc)
-        if group_by_university:
-            grouped = {}
-            for f in forms:
-                uni = f.get('university_name') or 'Unknown'
-                grouped.setdefault(uni, []).append(f)
-            return {"success": True, "data": grouped}
-        return {"success": True, "data": forms}
-    except Exception as e:
-        logger.error(f"Error listing feedback forms: {e}")
-        return {"success": False, "message": f"Failed to list forms: {str(e)}", "data": []}
-
-
-def get_feedback_form_by_training(training_id: str) -> dict:
-    try:
-        if db_manager.forms_collection is None:
-            return {"success": True, "data": None}
-        form = db_manager.forms_collection.find_one({'training_id': (training_id or '').upper(), 'is_active': True})
-        if not form:
-            return {"success": True, "data": None}
-        form['_id'] = str(form['_id'])
-        return {"success": True, "data": form}
-    except Exception as e:
-        logger.error(f"Error getting feedback form by training: {e}")
-        return {"success": False, "message": f"Failed to get form: {str(e)}"}
-
-
-def update_feedback_form(form_id: str, update_data: dict) -> dict:
-    try:
-        if db_manager.forms_collection is None:
-            return {"success": False, "message": "Database offline"}
-        if 'questions' in update_data:
-            questions = update_data.get('questions') or []
-            choice_count = sum(1 for q in questions if q.get('type') == 'choice')
-            subj_count = sum(1 for q in questions if q.get('type') == 'subjective')
-            if choice_count > 10 or subj_count > 10 or len(questions) > 20:
-                return {"success": False, "message": "Exceeded question limits (max 10 choice, 10 subjective, 20 total)"}
-        update_data['updated_at'] = datetime.utcnow()
-        result = db_manager.forms_collection.update_one({'_id': ObjectId(form_id)}, {'$set': update_data})
-        if result.modified_count > 0:
-            return {"success": True}
-        return {"success": False, "message": "Form not found or no changes"}
-    except Exception as e:
-        logger.error(f"Error updating feedback form: {e}")
-        return {"success": False, "message": f"Failed to update form: {str(e)}"}
-
-
-def delete_feedback_form(form_id: str) -> dict:
-    try:
-        if db_manager.forms_collection is None:
-            return {"success": False, "message": "Database offline"}
-        result = db_manager.forms_collection.update_one({'_id': ObjectId(form_id)}, {'$set': {'is_active': False, 'updated_at': datetime.utcnow()}})
-        if result.modified_count > 0:
-            return {"success": True}
-        return {"success": False, "message": "Form not found"}
-    except Exception as e:
-        logger.error(f"Error deleting feedback form: {e}")
-        return {"success": False, "message": f"Failed to delete form: {str(e)}"}
-
-
-def export_feedback_forms_csv() -> dict:
-    try:
-        forms_result = list_feedback_forms()
-        if not forms_result.get('success'):
-            return forms_result
-        forms = forms_result.get('data') or []
-        header = "University,Course,Training ID,Questions Count,Created At\n"
-        rows = []
-        for f in forms:
-            rows.append(f"{f.get('university_name','')},{f.get('course_name','')},{f.get('training_id','')},{len(f.get('questions',[]))},{f.get('created_at','')}\n")
-        csv_content = header + "".join(rows)
-        return {"success": True, "csv_content": csv_content}
-    except Exception as e:
-        logger.error(f"Error exporting feedback forms: {e}")
-        return {"success": False, "message": f"Failed to export forms: {str(e)}"}
-
-
-def get_feedback_form_by_id(form_id: str) -> dict:
-    """Fetch a single feedback form by ObjectId string."""
-    try:
-        if db_manager.forms_collection is None:
-            return {"success": False, "message": "Database offline"}
-        form = db_manager.forms_collection.find_one({'_id': ObjectId(form_id), 'is_active': True})
-        if not form:
-            return {"success": False, "message": "Form not found"}
-        form['_id'] = str(form['_id'])
-        return {"success": True, "data": form}
-    except Exception as e:
-        logger.error(f"Error getting feedback form by id: {e}")
-        return {"success": False, "message": f"Failed to get form: {str(e)}"}

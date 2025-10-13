@@ -32,8 +32,6 @@
                 <button onclick="showSection('form')" id="form-btn" class="px-6 py-2 rounded-md bg-blue-500 text-white font-medium">Submit Feedback</button>
                 <button onclick="showSection('analysis')" id="analysis-btn" class="px-6 py-2 rounded-md bg-green-500 text-white font-medium ml-2 hidden">AI Analysis</button>
                 <button onclick="showSection('dashboard')" id="dashboard-btn" class="px-6 py-2 rounded-md bg-purple-500 text-white font-medium ml-2 hidden">Dashboard</button>
-                <button onclick="showSection('feedback-generator')" id="feedback-generator-btn" class="px-6 py-2 rounded-md bg-fuchsia-500 text-white font-medium ml-2 hidden">Feedback Generator</button>
-                <button onclick="showSection('manage-feedback')" id="manage-feedback-btn" class="px-6 py-2 rounded-md bg-rose-500 text-white font-medium ml-2 hidden">Manage Feedback</button>
                 <button onclick="showSection('student')" id="student-feedback-btn" class="px-6 py-2 rounded-md bg-orange-500 text-white font-medium ml-2 hidden">Student Feedback</button>
                 <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 hidden">User Dashboard</button>
                 <button onclick="showSection('user-management')" id="user-management-btn" class="px-6 py-2 rounded-md bg-pink-500 text-white font-medium ml-2 hidden">User Management</button>
@@ -541,60 +539,6 @@
             </div>
         </div>
 
-        <!-- Feedback Generator (Admin) -->
-        <div id="feedback-generator-section" class="hidden bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Feedback Generator</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
-                    <input type="text" id="fg-university" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-500" placeholder="Enter university name">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Course Name *</label>
-                    <input type="text" id="fg-course" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-500" placeholder="Enter course name">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
-                    <input type="text" id="fg-training" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-500" placeholder="Enter training ID" style="text-transform: uppercase;">
-                </div>
-            </div>
-
-            <div class="mb-4 flex items-center gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Question Type</label>
-                    <select id="fg-question-type" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-500">
-                        <option value="choice">Choice (1-5)</option>
-                        <option value="subjective">Subjective (text)</option>
-                    </select>
-                </div>
-                <div class="mt-6">
-                    <button id="fg-add-question-btn" class="bg-fuchsia-500 text-white py-2 px-4 rounded-md hover:bg-fuchsia-600">Add Question</button>
-                </div>
-                <span id="fg-limit-hint" class="text-sm text-gray-600 mt-6">Up to 10 choice and 10 subjective (max 20)</span>
-            </div>
-
-            <div id="fg-questions" class="space-y-4"></div>
-
-            <div class="mt-6">
-                <button id="fg-generate-btn" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Generate</button>
-            </div>
-            <div id="fg-status" class="mt-4"></div>
-        </div>
-
-        <!-- Manage Feedback (Admin) -->
-        <div id="manage-feedback-section" class="hidden bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">Manage Feedback</h2>
-                <div class="space-x-2">
-                    <button id="mf-refresh-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Refresh</button>
-                    <button id="mf-export-btn" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Export CSV</button>
-                </div>
-            </div>
-            <div id="mf-loading" class="hidden text-sm text-gray-600 mb-2">Loading forms...</div>
-            <div id="mf-list" class="space-y-4"></div>
-            <div id="mf-status" class="mt-4"></div>
-        </div>
-
         <!-- Database Dashboard Section (Admin Only) -->
         <div id="database-section" class="hidden bg-white rounded-lg shadow-md p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Database Dashboard</h2>
@@ -684,8 +628,6 @@
             const usersSection = document.getElementById('users-section'); if (usersSection) usersSection.classList.add('hidden');
             const userManagementSection = document.getElementById('user-management-section'); if (userManagementSection) userManagementSection.classList.add('hidden');
             const databaseSection = document.getElementById('database-section'); if (databaseSection) databaseSection.classList.add('hidden');
-            const fgSection = document.getElementById('feedback-generator-section'); if (fgSection) fgSection.classList.add('hidden');
-            const mfSection = document.getElementById('manage-feedback-section'); if (mfSection) mfSection.classList.add('hidden');
 
             // Clear any existing auto-refresh timer when switching sections
             if (usersRefreshTimer) {
@@ -793,8 +735,6 @@
             document.getElementById('users-btn').classList.remove('hidden');
             document.getElementById('user-management-btn').classList.remove('hidden');
             document.getElementById('database-btn').classList.remove('hidden');
-            document.getElementById('feedback-generator-btn').classList.remove('hidden');
-            document.getElementById('manage-feedback-btn').classList.remove('hidden');
         }
 
         // Disable admin features
@@ -809,8 +749,6 @@
             document.getElementById('users-btn').classList.add('hidden');
             document.getElementById('user-management-btn').classList.add('hidden');
             document.getElementById('database-btn').classList.add('hidden');
-            document.getElementById('feedback-generator-btn').classList.add('hidden');
-            document.getElementById('manage-feedback-btn').classList.add('hidden');
         }
 
         // Enable user features
@@ -1638,7 +1576,6 @@
             const trainingIdUpper = (trainingIdInput.value || '').trim().toUpperCase();
             trainingIdInput.value = trainingIdUpper;
 
-            const dyn = (window.collectDynamicAnswers ? window.collectDynamicAnswers() : { quantitativeAnswers: {}, qualitativeAnswers: {}, dynamicAnswers: [] });
             const formData = {
                 training_id: trainingIdUpper,
                 student_name: upperName,
@@ -1647,7 +1584,7 @@
                 trainer_name: document.getElementById('trainer_name').value,
                 training_date_from: document.getElementById('training_date_from').value,
                 training_date_to: document.getElementById('training_date_to').value,
-                quantitative: Object.assign({
+                quantitative: {
                     content_quality: parseInt(document.getElementById('content_quality').value),
                     trainer_effectiveness: parseInt(document.getElementById('trainer_effectiveness').value),
                     clarity_explanation: parseInt(document.getElementById('clarity_explanation').value),
@@ -1665,16 +1602,15 @@
                     problem_solving_approach: parseInt(document.getElementById('problem_solving_approach').value),
                     real_world_examples: parseInt(document.getElementById('real_world_examples').value),
                     hands_on_practice: parseInt(document.getElementById('hands_on_practice').value)
-                }, dyn.quantitativeAnswers),
-                qualitative: Object.assign({
+                },
+                qualitative: {
                     general_feedback: document.getElementById('general_feedback').value,
                     learning_outcomes: document.getElementById('learning_outcomes').value,
                     practical_application: document.getElementById('practical_application').value,
                     trainer_feedback: document.getElementById('trainer_feedback').value,
                     suggestions_improvement: document.getElementById('suggestions_improvement').value,
                     open_ended_feedback: document.getElementById('open_ended_feedback').value
-                }, dyn.qualitativeAnswers),
-                dynamic_answers: dyn.dynamicAnswers
+                }
             };
 
             try {
@@ -1786,7 +1722,6 @@
             const totalParticipants = data.total_participants || 0;
             const summary = data.summary || 'No summary available';
             const sentiment = data.sentiment || 'neutral';
-            const polarization = (data.polarization && typeof data.polarization.score === 'number') ? data.polarization.score : (data.enhanced_analysis && typeof data.enhanced_analysis.polarization_score === 'number' ? data.enhanced_analysis.polarization_score : null);
             const suggestions = Array.isArray(data.suggestions) ? data.suggestions.join(', ') : (data.suggestions || 'No suggestions available');
             
             // Get all feedback data
@@ -1916,23 +1851,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Polarization Check -->
-                    ${polarization !== null ? `
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Polarization Check</h3>
-                        <div class="flex items-center justify-between">
-                            <div class="text-3xl font-bold">${polarization}%</div>
-                            <div class="flex-1 mx-4">
-                                <div class="w-full bg-gray-200 rounded-full h-4">
-                                    <div class="${polarization >= 75 ? 'bg-red-500' : polarization >= 50 ? 'bg-yellow-500' : 'bg-green-500'} h-4 rounded-full" style="width: ${Math.min(100, Math.max(0, polarization))}%"></div>
-                                </div>
-                            </div>
-                            <div class="text-sm font-medium text-gray-700">${polarization >= 75 ? 'High' : polarization >= 50 ? 'Medium' : 'Low'}</div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">Higher percentage indicates more contradictory responses among participants.</p>
-                    </div>
-                    ` : ''}
                     
                     <!-- Quantitative Analysis - Interactive Sliders -->
                     <div class="bg-white p-6 rounded-lg shadow-md">
@@ -2494,249 +2412,6 @@
             }
         }
 
-        // Feedback Generator logic
-        const fgState = { choice: 0, subjective: 0, total: 0 };
-
-        function renderQuestion(index, question) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'border border-gray-200 rounded-md p-4 relative';
-            wrapper.dataset.index = index;
-            wrapper.innerHTML = `
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm text-gray-600">${question.type === 'choice' ? 'Choice (1-5)' : 'Subjective'}</span>
-                    <button type="button" class="text-red-600 hover:text-red-800 text-sm" onclick="fgRemoveQuestion(${index})">Remove</button>
-                </div>
-                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-500" value="${question.text || ''}" oninput="fgUpdateText(${index}, this.value)" placeholder="Enter question text">
-            `;
-            return wrapper;
-        }
-
-        const fgQuestionsEl = document.getElementById('fg-questions');
-        let fgQuestions = [];
-
-        function fgUpdateCounters() {
-            fgState.choice = fgQuestions.filter(q => q.type === 'choice').length;
-            fgState.subjective = fgQuestions.filter(q => q.type === 'subjective').length;
-            fgState.total = fgQuestions.length;
-        }
-
-        function fgUpdateText(idx, text) {
-            if (fgQuestions[idx]) fgQuestions[idx].text = text;
-        }
-
-        function fgRemoveQuestion(idx) {
-            fgQuestions.splice(idx, 1);
-            fgUpdateCounters();
-            fgRenderAll();
-        }
-
-        function fgRenderAll() {
-            fgQuestionsEl.innerHTML = '';
-            fgQuestions.forEach((q, i) => {
-                fgQuestionsEl.appendChild(renderQuestion(i, q));
-            });
-            // Keep Add button visually after last question
-            const addBtn = document.getElementById('fg-add-question-btn');
-            if (addBtn && addBtn.parentElement && fgQuestionsEl.parentElement) {
-                addBtn.parentElement.after(fgQuestionsEl);
-            }
-        }
-
-        function fgAddQuestionFlow() {
-            const currentTotal = fgQuestions.length;
-            const choiceCount = fgQuestions.filter(q => q.type === 'choice').length;
-            const subjCount = fgQuestions.filter(q => q.type === 'subjective').length;
-            if (currentTotal >= 20 || (choiceCount >= 10 && subjCount >= 10)) {
-                showStatus('fg-status', 'You have reached the maximum of 20 questions (10 choice + 10 subjective).', 'error');
-                return;
-            }
-            const selectEl = document.getElementById('fg-question-type');
-            const normalized = (selectEl && selectEl.value) ? selectEl.value : 'choice';
-            if (normalized === 'choice' && choiceCount >= 10) {
-                showStatus('fg-status', 'Max 10 choice questions allowed.', 'error');
-                return;
-            }
-            if (normalized === 'subjective' && subjCount >= 10) {
-                showStatus('fg-status', 'Max 10 subjective questions allowed.', 'error');
-                return;
-            }
-            fgQuestions.push({ type: normalized, text: '' });
-            fgUpdateCounters();
-            fgRenderAll();
-        }
-
-        document.getElementById('fg-add-question-btn')?.addEventListener('click', function() {
-            fgAddQuestionFlow();
-        });
-
-        document.getElementById('fg-generate-btn')?.addEventListener('click', async function() {
-            const university = document.getElementById('fg-university').value.trim();
-            const course = document.getElementById('fg-course').value.trim();
-            const training = (document.getElementById('fg-training').value || '').trim().toUpperCase();
-            if (!university || !course || !training) {
-                showStatus('fg-status', 'Please fill all details.', 'error');
-                return;
-            }
-            if (fgQuestions.length === 0) {
-                showStatus('fg-status', 'Add at least one question.', 'error');
-                return;
-            }
-            // Validate question texts
-            const invalid = fgQuestions.some(q => !q.text || !q.text.trim());
-            if (invalid) {
-                showStatus('fg-status', 'Each question must have non-empty text.', 'error');
-                return;
-            }
-            const choiceCount = fgQuestions.filter(q => q.type === 'choice').length;
-            const subjCount = fgQuestions.filter(q => q.type === 'subjective').length;
-            if (choiceCount > 10 || subjCount > 10 || fgQuestions.length > 20) {
-                showStatus('fg-status', 'Exceeded limits: max 10 choice + 10 subjective (20 total).', 'error');
-                return;
-            }
-            try {
-                let resp;
-                const editingId = this.dataset && this.dataset.editingId;
-                if (editingId) {
-                    resp = await axios.put(`${API_BASE_URL}/admin/forms/${editingId}`, {
-                        university_name: university,
-                        course_name: course,
-                        training_id: training,
-                        questions: fgQuestions
-                    }, { withCredentials: true });
-                } else {
-                    resp = await axios.post(`${API_BASE_URL}/admin/forms`, {
-                        university_name: university,
-                        course_name: course,
-                        training_id: training,
-                        questions: fgQuestions
-                    }, { withCredentials: true });
-                }
-                if (resp.data && resp.data.success) {
-                    showStatus('fg-status', editingId ? 'Form updated successfully!' : 'Form generated successfully!', 'success');
-                    fgQuestions = [];
-                    fgRenderAll();
-                    document.getElementById('fg-university').value = '';
-                    document.getElementById('fg-course').value = '';
-                    document.getElementById('fg-training').value = '';
-                    // Reset editing state
-                    this.textContent = 'Generate';
-                    if (this.dataset) delete this.dataset.editingId;
-                    // Refresh Manage Feedback
-                    mfLoad();
-                } else {
-                    // Prefer server message if present
-                    const serverMsg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Failed to create form';
-                    showStatus('fg-status', serverMsg, 'error');
-                }
-            } catch (e) {
-                const serverMsg = (e && e.response && e.response.data && e.response.data.message) ? e.response.data.message : e.message;
-                showStatus('fg-status', 'Error creating form: ' + serverMsg, 'error');
-            }
-        });
-
-        // Manage Feedback logic
-        async function mfLoad() {
-            const loading = document.getElementById('mf-loading');
-            const list = document.getElementById('mf-list');
-            loading.classList.remove('hidden');
-            list.innerHTML = '';
-            try {
-                const resp = await axios.get(`${API_BASE_URL}/admin/forms?grouped=1`, { withCredentials: true });
-                if (resp.data && resp.data.success) {
-                    const grouped = resp.data.data || {};
-                    let html = '';
-                    Object.entries(grouped).forEach(([uni, forms]) => {
-                        html += `
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <h4 class="font-semibold text-lg text-gray-800 mb-3">${uni} (${forms.length} forms)</h4>
-                                <div class="space-y-2">
-                        `;
-                        forms.forEach(f => {
-                            const created = f.created_at ? new Date(f.created_at).toLocaleString() : '';
-                            html += `
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                    <div class="text-sm">
-                                        <div class="font-medium">${f.course_name} — ${f.training_id}</div>
-                                        <div class="text-gray-600">${f.questions?.length || 0} questions • ${created}</div>
-                                    </div>
-                                    <div class="space-x-2 text-sm">
-                                        <button class="px-3 py-1 bg-yellow-500 text-white rounded" onclick="mfEdit('${f._id}')">Edit</button>
-                                        <button class="px-3 py-1 bg-red-600 text-white rounded" onclick="mfDelete('${f._id}')">Delete</button>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        html += `</div></div>`;
-                    });
-                    list.innerHTML = html || '<div class="text-sm text-gray-600">No forms found.</div>';
-                } else {
-                    list.innerHTML = '<div class="text-sm text-red-600">Failed to load forms.</div>';
-                }
-            } catch (e) {
-                list.innerHTML = '<div class="text-sm text-red-600">Error loading forms: ' + e.message + '</div>';
-            } finally {
-                loading.classList.add('hidden');
-            }
-        }
-
-        document.getElementById('mf-refresh-btn')?.addEventListener('click', mfLoad);
-        document.getElementById('mf-export-btn')?.addEventListener('click', async function() {
-            try {
-                const resp = await axios.get(`${API_BASE_URL}/admin/forms/export`, { withCredentials: true });
-                if (resp.data && resp.data.success) {
-                    const blob = new Blob([resp.data.csv_content], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'feedback_forms_export.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }
-            } catch (e) {}
-        });
-
-        async function mfDelete(formId) {
-            if (!confirm('Delete this form?')) return;
-            try {
-                const resp = await axios.delete(`${API_BASE_URL}/admin/forms/${formId}`, { withCredentials: true });
-                if (resp.data && resp.data.success) {
-                    mfLoad();
-                } else {
-                    showStatus('mf-status', (resp.data && resp.data.message) || 'Failed to delete form', 'error');
-                }
-            } catch (e) {
-                showStatus('mf-status', 'Error deleting form: ' + e.message, 'error');
-            }
-        }
-
-        window.mfDelete = mfDelete;
-
-        async function mfEdit(formId) {
-            try {
-                const resp = await axios.get(`${API_BASE_URL}/admin/forms/${formId}`, { withCredentials: true });
-                if (resp.data && resp.data.success) {
-                    const form = resp.data.data;
-                    document.getElementById('fg-university').value = form.university_name || '';
-                    document.getElementById('fg-course').value = form.course_name || '';
-                    document.getElementById('fg-training').value = form.training_id || '';
-                    fgQuestions = (form.questions || []).map(q => ({ type: q.type, text: q.text }));
-                    fgRenderAll();
-                    showSection('feedback-generator');
-                    const genBtn = document.getElementById('fg-generate-btn');
-                    genBtn.textContent = 'Save Changes';
-                    genBtn.dataset.editingId = form._id;
-                } else {
-                    showStatus('mf-status', (resp.data && resp.data.message) || 'Failed to load form', 'error');
-                }
-            } catch (e) {
-                showStatus('mf-status', 'Error loading form: ' + e.message, 'error');
-            }
-        }
-
-        window.mfEdit = mfEdit;
-
         // User Management Functions
         function showUserManagementTab(tab) {
             // Hide all tab contents
@@ -2976,86 +2651,6 @@
                 document.getElementById('training_id').classList.add('bg-gray-100');
                 document.getElementById('student_name').classList.add('bg-gray-100');
                 document.getElementById('university_name').classList.add('bg-gray-100');
-                // Load dynamic form (if exists) by training ID and render dynamic questions
-                loadDynamicForm(window.userData.training_id);
-            }
-        }
-
-        async function loadDynamicForm(trainingId) {
-            try {
-                const resp = await axios.get(`${API_BASE_URL}/forms/by_training/${encodeURIComponent(trainingId)}`);
-                if (resp.data && resp.data.success && resp.data.data) {
-                    const form = resp.data.data;
-                    // Persist questions for structured answer capture
-                    window.dynamicFormQuestions = Array.isArray(form.questions) ? form.questions.slice() : [];
-                    // Render choice questions (1-5) and subjective questions
-                    const quantitativeContainer = document.getElementById('quantitative-section');
-                    const qualitativeContainer = document.getElementById('qualitative-section');
-                    if (!quantitativeContainer || !qualitativeContainer) return;
-
-                    // Clear existing
-                    quantitativeContainer.innerHTML = '';
-                    qualitativeContainer.innerHTML = '';
-
-                    let qIndex = 1;
-                    form.questions.forEach(q => {
-                        if (q.type === 'choice') {
-                            const row = document.createElement('div');
-                            row.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-                            row.innerHTML = `
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">${q.text}</label>
-                                    <select id="dyn_q_${qIndex}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">Select rating</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                    </select>
-                                </div>`;
-                            quantitativeContainer.appendChild(row);
-                        } else {
-                            const row = document.createElement('div');
-                            row.className = 'mt-4';
-                            row.innerHTML = `
-                                <label class="block text-sm font-medium text-gray-700 mb-2">${q.text}</label>
-                                <textarea id="dyn_q_${qIndex}" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>`;
-                            qualitativeContainer.appendChild(row);
-                        }
-                        qIndex += 1;
-                    });
-
-                    // Hook into submission to include these answers (both merged and structured)
-                    window.collectDynamicAnswers = function() {
-                        const quantitativeAnswers = {};
-                        const qualitativeAnswers = {};
-                        const dynamicAnswers = [];
-                        let idx = 1;
-                        (window.dynamicFormQuestions || []).forEach(q => {
-                            const el = document.getElementById(`dyn_q_${idx}`);
-                            if (el) {
-                                if (q.type === 'choice') {
-                                    const valNum = parseInt(el.value);
-                                    if (!isNaN(valNum)) {
-                                        quantitativeAnswers[`q_${idx}`] = valNum;
-                                        dynamicAnswers.push({ index: idx, type: 'choice', text: q.text || '', value: valNum });
-                                    }
-                                } else {
-                                    const txt = (el.value || '').trim();
-                                    if (txt) {
-                                        qualitativeAnswers[`q_${idx}`] = txt;
-                                        dynamicAnswers.push({ index: idx, type: 'subjective', text: q.text || '', value: txt });
-                                    }
-                                }
-                            }
-                            idx += 1;
-                        });
-                        return { quantitativeAnswers, qualitativeAnswers, dynamicAnswers };
-                    }
-                }
-            } catch (e) {
-                // ignore
             }
         }
 
