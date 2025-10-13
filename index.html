@@ -2023,13 +2023,39 @@
             }
 
             try {
+                // Show loading indicator
+                const resultsDiv = document.getElementById('student-feedback-results');
+                const contentDiv = document.getElementById('student-feedback-content');
+                contentDiv.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <p class="mt-2 text-gray-600">Loading student feedback and analyzing polarization...</p>
+                    </div>
+                `;
+                resultsDiv.classList.remove('hidden');
+                
+                // First get the feedback data
                 const response = await axios.get(`${API_BASE_URL}/get_feedback?training_id=${trainingId}`);
                 
                 if (response.data.success) {
-                    // Store feedbacks in session storage for modal access and Excel download
+                    // Get polarization analysis for this training
+                    let polarizationData = null;
+                    try {
+                        const analysisResponse = await axios.post(`${API_BASE_URL}/analyze_training_feedback`, { training_id: trainingId });
+                        if (analysisResponse.data.success && analysisResponse.data.data.polarization_check) {
+                            polarizationData = analysisResponse.data.data.polarization_check;
+                        }
+                    } catch (analysisError) {
+                        console.warn('Could not get polarization analysis:', analysisError);
+                    }
+                    
+                    // Store feedbacks and polarization data in session storage
                     sessionStorage.setItem('currentFeedbacks', JSON.stringify(response.data.data));
                     sessionStorage.setItem('currentTrainingId', trainingId);
-                    displayStudentFeedback(response.data.data);
+                    sessionStorage.setItem('currentPolarizationData', JSON.stringify(polarizationData));
+                    
+                    // Display feedback with polarization-based color coding
+                    displayStudentFeedback(response.data.data, polarizationData);
                     
                     // Enable download button
                     document.getElementById('download-excel-btn').disabled = false;
@@ -2041,19 +2067,64 @@
             }
         }
 
-        // Display student feedback with clickable links
-        function displayStudentFeedback(feedbacks) {
+        // Display student feedback with clickable links and polarization-based color coding
+        function displayStudentFeedback(feedbacks, polarizationData = null) {
             const resultsDiv = document.getElementById('student-feedback-results');
             const contentDiv = document.getElementById('student-feedback-content');
             
             if (feedbacks.length === 0) {
                 contentDiv.innerHTML = '<div class="text-center text-gray-500 py-8">No feedback found for this training ID</div>';
             } else {
+                // Determine overall polarization level for the training
+                let overallPolarizationLevel = 'low';
+                let polarizationScore = 0;
+                if (polarizationData) {
+                    overallPolarizationLevel = polarizationData.polarization_level || 'low';
+                    polarizationScore = polarizationData.polarization_score || 0;
+                }
+                
+                // Get color scheme based on polarization level
+                const getPolarizationColors = (level) => {
+                    switch (level) {
+                        case 'high':
+                            return {
+                                background: 'bg-red-50',
+                                border: 'border-red-200',
+                                text: 'text-red-800',
+                                headerBg: 'bg-red-100',
+                                headerText: 'text-red-900'
+                            };
+                        case 'medium':
+                            return {
+                                background: 'bg-yellow-50',
+                                border: 'border-yellow-200',
+                                text: 'text-yellow-800',
+                                headerBg: 'bg-yellow-100',
+                                headerText: 'text-yellow-900'
+                            };
+                        default: // low
+                            return {
+                                background: 'bg-green-50',
+                                border: 'border-green-200',
+                                text: 'text-green-800',
+                                headerBg: 'bg-green-100',
+                                headerText: 'text-green-900'
+                            };
+                    }
+                };
+                
+                const colors = getPolarizationColors(overallPolarizationLevel);
+                
                 let html = `
                     <div class="space-y-4">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-blue-800 mb-2">Click on any student name to view their detailed feedback</h3>
-                            <p class="text-sm text-blue-600">Total ${feedbacks.length} students have submitted feedback</p>
+                        <div class="${colors.background} ${colors.border} border-2 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold ${colors.text}">Click on any student name to view their detailed feedback</h3>
+                                <div class="text-sm ${colors.text} font-medium">
+                                    Polarization: ${polarizationScore}% (${overallPolarizationLevel.toUpperCase()})
+                                </div>
+                            </div>
+                            <p class="text-sm ${colors.text}">Total ${feedbacks.length} students have submitted feedback</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 `;
@@ -2064,16 +2135,38 @@
                     const trainerName = feedback.trainer_name || 'Not specified';
                     const subjectName = feedback.subject_name || 'Not specified';
                     
+                    // Check if this specific student has contradictory responses
+                    let studentPolarizationLevel = overallPolarizationLevel;
+                    if (polarizationData && polarizationData.details) {
+                        const studentDetail = polarizationData.details.find(detail => 
+                            detail.participant === studentName || detail.participant === `Student ${index + 1}`
+                        );
+                        if (studentDetail && studentDetail.contradictions && studentDetail.contradictions.length > 0) {
+                            studentPolarizationLevel = 'high'; // Individual student has contradictions
+                        }
+                    } else {
+                        // If no polarization data available, calculate individual student polarization
+                        const studentPolarization = calculateStudentPolarization(feedback);
+                        studentPolarizationLevel = studentPolarization.level;
+                    }
+                    
+                    const studentColors = getPolarizationColors(studentPolarizationLevel);
+                    
                     html += `
-                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
+                        <div class="${studentColors.background} ${studentColors.border} border-2 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
                              onclick="showStudentDetails(${index})">
                             <div class="text-center">
-                                <div class="text-lg font-semibold text-blue-600 hover:text-blue-800 underline mb-2">
+                                <div class="text-lg font-semibold ${studentColors.text} hover:opacity-80 underline mb-2">
                                     ${studentName}
                                 </div>
                                 <div class="text-sm text-gray-500 mb-1">${feedbackDate}</div>
                                 <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
                                 <div class="text-xs text-gray-500 mt-1">Subject: ${subjectName}</div>
+                                <div class="text-xs ${studentColors.text} mt-1 font-medium">
+                                    ${studentPolarizationLevel === 'high' ? '⚠️ High Contradiction' : 
+                                      studentPolarizationLevel === 'medium' ? '⚡ Medium Risk' : 
+                                      '✅ Consistent Feedback'}
+                                </div>
                                 <div class="text-xs text-gray-400 mt-1">Click to view details</div>
                             </div>
                         </div>
@@ -2090,6 +2183,65 @@
             resultsDiv.classList.remove('hidden');
         }
 
+        // Calculate individual student polarization
+        function calculateStudentPolarization(feedback) {
+            if (!feedback.quantitative) return { level: 'low', score: 0, contradictions: [] };
+            
+            const quantitative = feedback.quantitative;
+            const related_question_pairs = [
+                ["content_quality", "clarity_of_explanation"],
+                ["trainer_effectiveness", "clarity_of_explanation"],
+                ["trainer_effectiveness", "engagement_interaction"],
+                ["content_quality", "practical_relevance"],
+                ["clarity_of_explanation", "practical_relevance"]
+            ];
+            
+            let contradictions = [];
+            let is_contradictory = false;
+            
+            // Check for contradictory responses within this participant's feedback
+            for (const [question1, question2] of related_question_pairs) {
+                if (question1 in quantitative && question2 in quantitative) {
+                    const val1 = quantitative[question1];
+                    const val2 = quantitative[question2];
+                    
+                    if (typeof val1 === 'number' && typeof val2 === 'number') {
+                        const rating_diff = Math.abs(val1 - val2);
+                        if (rating_diff >= 3) {
+                            is_contradictory = true;
+                            contradictions.push({
+                                question_pair: `${question1} vs ${question2}`,
+                                ratings: `${val1} vs ${val2}`,
+                                difference: rating_diff
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Also check for overall extreme variance in ratings
+            if (!is_contradictory) {
+                const ratings = Object.values(quantitative).filter(v => typeof v === 'number' && v >= 1 && v <= 5);
+                if (ratings.length >= 3) {
+                    const min_rating = Math.min(...ratings);
+                    const max_rating = Math.max(...ratings);
+                    if (max_rating - min_rating >= 3) {
+                        is_contradictory = true;
+                        contradictions.push({
+                            question_pair: "overall_variance",
+                            ratings: `min: ${min_rating}, max: ${max_rating}`,
+                            difference: max_rating - min_rating
+                        });
+                    }
+                }
+            }
+            
+            const score = is_contradictory ? 100 : 0; // Individual student is either contradictory (100%) or not (0%)
+            const level = is_contradictory ? 'high' : 'low';
+            
+            return { level, score, contradictions };
+        }
+
         // Show detailed student feedback
         function showStudentDetails(index) {
             const feedbacks = JSON.parse(sessionStorage.getItem('currentFeedbacks') || '[]');
@@ -2104,6 +2256,9 @@
             const feedbackDate = feedback.date ? new Date(feedback.date).toLocaleDateString() : 'Date not available';
             const trainerName = feedback.trainer_name || 'Not specified';
             const subjectName = feedback.subject_name || 'Not specified';
+            
+            // Calculate individual student polarization
+            const studentPolarization = calculateStudentPolarization(feedback);
             
             let detailsHtml = `
                 <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -2130,6 +2285,60 @@
                                 <div>
                                     <div class="text-sm font-medium text-gray-600">Subject</div>
                                     <div class="text-lg font-semibold">${subjectName}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Polarization Analysis Section -->
+                            <div class="mb-6 p-4 rounded-lg ${studentPolarization.level === 'high' ? 'bg-red-50 border-2 border-red-200' : 
+                                studentPolarization.level === 'medium' ? 'bg-yellow-50 border-2 border-yellow-200' : 
+                                'bg-green-50 border-2 border-green-200'}">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-lg font-semibold ${studentPolarization.level === 'high' ? 'text-red-800' : 
+                                        studentPolarization.level === 'medium' ? 'text-yellow-800' : 
+                                        'text-green-800'}">Response Consistency Analysis</h4>
+                                    <div class="text-sm font-medium ${studentPolarization.level === 'high' ? 'text-red-600' : 
+                                        studentPolarization.level === 'medium' ? 'text-yellow-600' : 
+                                        'text-green-600'}">
+                                        ${studentPolarization.level === 'high' ? '⚠️ HIGH CONTRADICTION' : 
+                                          studentPolarization.level === 'medium' ? '⚡ MEDIUM RISK' : 
+                                          '✅ CONSISTENT FEEDBACK'}
+                                    </div>
+                                </div>
+                                
+                                ${studentPolarization.contradictions.length > 0 ? `
+                                    <div class="mb-3">
+                                        <p class="text-sm ${studentPolarization.level === 'high' ? 'text-red-700' : 
+                                            studentPolarization.level === 'medium' ? 'text-yellow-700' : 
+                                            'text-green-700'} mb-2">
+                                            This student's responses show ${studentPolarization.contradictions.length} contradiction(s):
+                                        </p>
+                                        <div class="space-y-2">
+                                            ${studentPolarization.contradictions.map(contradiction => `
+                                                <div class="text-xs ${studentPolarization.level === 'high' ? 'bg-red-100 text-red-800' : 
+                                                    studentPolarization.level === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                                    'bg-green-100 text-green-800'} p-2 rounded">
+                                                    <strong>${contradiction.question_pair}:</strong> ${contradiction.ratings} 
+                                                    (Difference: ${contradiction.difference})
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <p class="text-sm ${studentPolarization.level === 'high' ? 'text-red-700' : 
+                                        studentPolarization.level === 'medium' ? 'text-yellow-700' : 
+                                        'text-green-700'}">
+                                        This student's responses are consistent across all rating categories.
+                                    </p>
+                                `}
+                                
+                                <div class="text-xs ${studentPolarization.level === 'high' ? 'text-red-600' : 
+                                    studentPolarization.level === 'medium' ? 'text-yellow-600' : 
+                                    'text-green-600'} mt-2">
+                                    ${studentPolarization.level === 'high' ? 
+                                        'Recommendation: Follow up with this student to understand the reasons for contradictory feedback.' :
+                                        studentPolarization.level === 'medium' ? 
+                                        'Recommendation: Monitor this student\'s feedback patterns in future sessions.' :
+                                        'This student\'s feedback is reliable and consistent.'}
                                 </div>
                             </div>
                             
