@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
-from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query, insert_user, get_users, get_user_by_credentials, update_user, delete_user
+from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query, insert_user, get_users, get_user_by_credentials, update_user, delete_user, delete_feedback
 from config import Config
 # Removed feedback_form import - using inline validation
 from openai_analysis import analyze_text_feedback, analyze_comprehensive_training_feedback
@@ -581,6 +581,25 @@ def admin_export_users():
         return jsonify({
             'success': False,
             'message': f'Failed to export users: {str(e)}'
+        }), 500
+
+@app.route('/admin/delete_feedback/<feedback_id>', methods=['DELETE'])
+@require_admin
+def admin_delete_feedback(feedback_id):
+    """Delete individual feedback (admin only)"""
+    try:
+        result = delete_feedback(feedback_id)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error deleting feedback: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Failed to delete feedback: {str(e)}'
         }), 500
 
 @app.route('/submit_feedback', methods=['POST'])

@@ -444,6 +444,7 @@
             </div>
 
             <div id="student-feedback-results" class="hidden">
+                <div id="student-feedback-status" class="mb-4"></div>
                 <div id="student-feedback-content"></div>
             </div>
         </div>
@@ -762,6 +763,14 @@
             
             // Show only submit feedback button for users
             document.getElementById('form-btn').classList.remove('hidden');
+            
+            // Hide all admin features for regular users
+            document.getElementById('analysis-btn').classList.add('hidden');
+            document.getElementById('dashboard-btn').classList.add('hidden');
+            document.getElementById('student-feedback-btn').classList.add('hidden');
+            document.getElementById('users-btn').classList.add('hidden');
+            document.getElementById('user-management-btn').classList.add('hidden');
+            document.getElementById('database-btn').classList.add('hidden');
         }
 
         async function loadActiveUsers() {
@@ -2075,12 +2084,19 @@
             if (feedbacks.length === 0) {
                 contentDiv.innerHTML = '<div class="text-center text-gray-500 py-8">No feedback found for this training ID</div>';
             } else {
-                // Determine overall polarization level for the training
+                // Determine overall polarization level for the training based on AI analysis
                 let overallPolarizationLevel = 'low';
                 let polarizationScore = 0;
                 if (polarizationData) {
-                    overallPolarizationLevel = polarizationData.polarization_level || 'low';
                     polarizationScore = polarizationData.polarization_score || 0;
+                    // Determine level based on AI analysis score
+                    if (polarizationScore >= 75) {
+                        overallPolarizationLevel = 'high';
+                    } else if (polarizationScore >= 50) {
+                        overallPolarizationLevel = 'medium';
+                    } else {
+                        overallPolarizationLevel = 'low';
+                    }
                 }
                 
                 // Get color scheme based on polarization level
@@ -2135,39 +2151,41 @@
                     const trainerName = feedback.trainer_name || 'Not specified';
                     const subjectName = feedback.subject_name || 'Not specified';
                     
-                    // Check if this specific student has contradictory responses
-                    let studentPolarizationLevel = overallPolarizationLevel;
-                    if (polarizationData && polarizationData.details) {
-                        const studentDetail = polarizationData.details.find(detail => 
-                            detail.participant === studentName || detail.participant === `Student ${index + 1}`
-                        );
-                        if (studentDetail && studentDetail.contradictions && studentDetail.contradictions.length > 0) {
-                            studentPolarizationLevel = 'high'; // Individual student has contradictions
-                        }
-                    } else {
-                        // If no polarization data available, calculate individual student polarization
-                        const studentPolarization = calculateStudentPolarization(feedback);
-                        studentPolarizationLevel = studentPolarization.level;
-                    }
+                    // Calculate individual student polarization using AI analysis logic
+                    const studentPolarization = calculateStudentPolarization(feedback);
+                    const studentPolarizationLevel = studentPolarization.level;
+                    const studentPolarizationScore = studentPolarization.score;
                     
                     const studentColors = getPolarizationColors(studentPolarizationLevel);
                     
                     html += `
-                        <div class="${studentColors.background} ${studentColors.border} border-2 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
-                             onclick="showStudentDetails(${index})">
+                        <div class="${studentColors.background} ${studentColors.border} border-2 rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div class="text-center">
-                                <div class="text-lg font-semibold ${studentColors.text} hover:opacity-80 underline mb-2">
+                                <div class="text-lg font-semibold ${studentColors.text} hover:opacity-80 underline mb-2 cursor-pointer" 
+                                     onclick="showStudentDetails(${index})">
                                     ${studentName}
                                 </div>
                                 <div class="text-sm text-gray-500 mb-1">${feedbackDate}</div>
                                 <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
                                 <div class="text-xs text-gray-500 mt-1">Subject: ${subjectName}</div>
                                 <div class="text-xs ${studentColors.text} mt-1 font-medium">
-                                    ${studentPolarizationLevel === 'high' ? '⚠️ High Contradiction' : 
-                                      studentPolarizationLevel === 'medium' ? '⚡ Medium Risk' : 
-                                      '✅ Consistent Feedback'}
+                                    ${studentPolarizationLevel === 'high' ? `⚠️ High Contradiction (${studentPolarizationScore}%)` : 
+                                      studentPolarizationLevel === 'medium' ? `⚡ Medium Risk (${studentPolarizationScore}%)` : 
+                                      `✅ Consistent Feedback (${studentPolarizationScore}%)`}
                                 </div>
-                                <div class="text-xs text-gray-400 mt-1">Click to view details</div>
+                                <div class="text-xs text-gray-400 mt-1 mb-3">Click name to view details</div>
+                                
+                                <!-- Action buttons -->
+                                <div class="flex justify-center space-x-2">
+                                    <button onclick="showStudentDetails(${index})" 
+                                            class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                                        View Details
+                                    </button>
+                                    <button onclick="deleteFeedback('${feedback._id}', '${studentName}')" 
+                                            class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2236,10 +2254,35 @@
                 }
             }
             
-            const score = is_contradictory ? 100 : 0; // Individual student is either contradictory (100%) or not (0%)
-            const level = is_contradictory ? 'high' : 'low';
+            // Calculate score based on number and severity of contradictions
+            let score = 0;
+            let level = 'low';
             
-            return { level, score, contradictions };
+            if (is_contradictory) {
+                // Base score for having contradictions
+                score = 30;
+                
+                // Add points for each contradiction
+                score += contradictions.length * 20;
+                
+                // Add points for severity (higher differences = more severe)
+                const totalSeverity = contradictions.reduce((sum, c) => sum + c.difference, 0);
+                score += totalSeverity * 8;
+                
+                // Cap at 100
+                score = Math.min(score, 100);
+                
+                // Determine level based on AI analysis thresholds
+                if (score >= 75) {
+                    level = 'high';
+                } else if (score >= 50) {
+                    level = 'medium';
+                } else {
+                    level = 'low';
+                }
+            }
+            
+            return { level, score: Math.round(score), contradictions };
         }
 
         // Show detailed student feedback
@@ -2288,20 +2331,20 @@
                                 </div>
                             </div>
                             
-                            <!-- Polarization Analysis Section -->
+                            <!-- Individual Student Polarization Analysis Section -->
                             <div class="mb-6 p-4 rounded-lg ${studentPolarization.level === 'high' ? 'bg-red-50 border-2 border-red-200' : 
                                 studentPolarization.level === 'medium' ? 'bg-yellow-50 border-2 border-yellow-200' : 
                                 'bg-green-50 border-2 border-green-200'}">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="text-lg font-semibold ${studentPolarization.level === 'high' ? 'text-red-800' : 
                                         studentPolarization.level === 'medium' ? 'text-yellow-800' : 
-                                        'text-green-800'}">Response Consistency Analysis</h4>
+                                        'text-green-800'}">Individual Response Analysis</h4>
                                     <div class="text-sm font-medium ${studentPolarization.level === 'high' ? 'text-red-600' : 
                                         studentPolarization.level === 'medium' ? 'text-yellow-600' : 
                                         'text-green-600'}">
-                                        ${studentPolarization.level === 'high' ? '⚠️ HIGH CONTRADICTION' : 
-                                          studentPolarization.level === 'medium' ? '⚡ MEDIUM RISK' : 
-                                          '✅ CONSISTENT FEEDBACK'}
+                                        ${studentPolarization.level === 'high' ? `⚠️ HIGH CONTRADICTION (${studentPolarization.score}%)` : 
+                                          studentPolarization.level === 'medium' ? `⚡ MEDIUM RISK (${studentPolarization.score}%)` : 
+                                          `✅ CONSISTENT FEEDBACK (${studentPolarization.score}%)`}
                                     </div>
                                 </div>
                                 
@@ -2403,6 +2446,32 @@
             const modal = document.querySelector('.fixed.inset-0');
             if (modal) {
                 modal.remove();
+            }
+        }
+
+        // Delete individual feedback
+        async function deleteFeedback(feedbackId, studentName) {
+            if (!confirm(`Are you sure you want to delete feedback for ${studentName}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/admin/delete_feedback/${feedbackId}`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    // Show success message
+                    showStatus('student-feedback-status', `Feedback for ${studentName} deleted successfully!`, 'success');
+                    
+                    // Reload the student feedback list
+                    const trainingId = document.getElementById('student_training_id').value;
+                    if (trainingId) {
+                        await loadStudentFeedback();
+                    }
+                } else {
+                    showStatus('student-feedback-status', response.data.message || 'Failed to delete feedback', 'error');
+                }
+            } catch (error) {
+                showStatus('student-feedback-status', 'Error deleting feedback: ' + error.message, 'error');
             }
         }
 

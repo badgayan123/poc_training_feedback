@@ -247,8 +247,7 @@ def insert_user(user_data):
         existing_user = db_manager.collection.find_one({
             'username': user_data['username'],
             'university_name': user_data['university_name'],
-            'training_id': user_data['training_id'],
-            'is_active': True
+            'training_id': user_data['training_id']
         })
         if existing_user:
             return {
@@ -258,7 +257,6 @@ def insert_user(user_data):
 
         # Add timestamp
         user_data['created_at'] = datetime.utcnow()
-        user_data['is_active'] = True
         
         # Insert the document
         result = db_manager.collection.insert_one(user_data)
@@ -288,8 +286,8 @@ def get_users():
             logger.warning("Database offline - returning empty user list")
             return {"success": True, "data": [], "message": "Offline mode - no data available"}
         
-        # Execute query
-        cursor = db_manager.collection.find({'is_active': True})
+        # Execute query - get all users (no filtering since we use hard delete)
+        cursor = db_manager.collection.find({})
         users = []
         
         for doc in cursor:
@@ -330,8 +328,7 @@ def get_user_by_credentials(username, password):
         
         # Find user by username
         user = db_manager.collection.find_one({
-            'username': username,
-            'is_active': True
+            'username': username
         })
         
         if not user:
@@ -382,9 +379,20 @@ def update_user(user_id, update_data):
             logger.warning("Database offline - user update failed")
             return {"success": False, "message": "Database offline - update unavailable"}
         
+        # Convert string ID to ObjectId for MongoDB query
+        from bson import ObjectId
+        try:
+            object_id = ObjectId(user_id)
+        except Exception as e:
+            logger.error(f"Invalid user ID format: {user_id}")
+            return {
+                'success': False,
+                'message': 'Invalid user ID format'
+            }
+        
         # Update the document
         result = db_manager.collection.update_one(
-            {'_id': user_id},
+            {'_id': object_id},
             {'$set': update_data}
         )
         
@@ -408,7 +416,7 @@ def update_user(user_id, update_data):
 
 def delete_user(user_id):
     """
-    Soft delete user (set is_active to False)
+    Hard delete user (permanently remove from database)
     
     Args:
         user_id (str): User ID
@@ -421,14 +429,24 @@ def delete_user(user_id):
             logger.warning("Database offline - user deletion failed")
             return {"success": False, "message": "Database offline - deletion unavailable"}
         
-        # Soft delete by setting is_active to False
-        result = db_manager.collection.update_one(
-            {'_id': user_id},
-            {'$set': {'is_active': False}}
+        # Convert string ID to ObjectId for MongoDB query
+        from bson import ObjectId
+        try:
+            object_id = ObjectId(user_id)
+        except Exception as e:
+            logger.error(f"Invalid user ID format: {user_id}")
+            return {
+                'success': False,
+                'message': 'Invalid user ID format'
+            }
+        
+        # Hard delete - permanently remove the user
+        result = db_manager.collection.delete_one(
+            {'_id': object_id}
         )
         
-        if result.modified_count > 0:
-            logger.info(f"User deleted successfully: {user_id}")
+        if result.deleted_count > 0:
+            logger.info(f"User permanently deleted: {user_id}")
             return {
                 'success': True,
                 'message': 'User deleted successfully'
@@ -443,4 +461,53 @@ def delete_user(user_id):
         return {
             'success': False,
             'message': f'Failed to delete user: {str(e)}'
+        }
+
+def delete_feedback(feedback_id):
+    """
+    Hard delete feedback (permanently remove from database)
+    
+    Args:
+        feedback_id (str): Feedback ID
+        
+    Returns:
+        dict: Result with success status
+    """
+    try:
+        if db_manager.collection is None:
+            logger.warning("Database offline - feedback deletion failed")
+            return {"success": False, "message": "Database offline - deletion unavailable"}
+        
+        # Convert string ID to ObjectId for MongoDB query
+        from bson import ObjectId
+        try:
+            object_id = ObjectId(feedback_id)
+        except Exception as e:
+            logger.error(f"Invalid feedback ID format: {feedback_id}")
+            return {
+                'success': False,
+                'message': 'Invalid feedback ID format'
+            }
+        
+        # Hard delete - permanently remove the feedback
+        result = db_manager.collection.delete_one(
+            {'_id': object_id}
+        )
+        
+        if result.deleted_count > 0:
+            logger.info(f"Feedback permanently deleted: {feedback_id}")
+            return {
+                'success': True,
+                'message': 'Feedback deleted successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Feedback not found'
+            }
+    except Exception as e:
+        logger.error(f"Error deleting feedback: {e}")
+        return {
+            'success': False,
+            'message': f'Failed to delete feedback: {str(e)}'
         }
