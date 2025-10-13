@@ -235,21 +235,26 @@ def insert_user(user_data):
         if db_manager.collection is None:
             logger.warning("Database offline - simulating user insertion")
             return {"success": True, "inserted_id": "simulated_user_id", "message": "Offline mode - user not saved"}
-        
-        # Check if username already exists
-        existing_user = db_manager.collection.find_one({'username': user_data['username']})
-        if existing_user:
-            return {
-                'success': False,
-                'message': 'Username already exists'
-            }
-        
-        # Normalize/validate
+        # Normalize/validate BEFORE uniqueness check
         user_data['username'] = (user_data.get('username') or '').strip()
         user_data['password'] = (user_data.get('password') or '').strip()
         user_data['university_name'] = (user_data.get('university_name') or '').strip()
         user_data['training_id'] = (user_data.get('training_id') or '').strip().upper()
         user_data['course_name'] = (user_data.get('course_name') or '').strip()
+
+        # Uniqueness: allow same username across different courses/training IDs
+        # Block only exact duplicates for same username + university + training_id
+        existing_user = db_manager.collection.find_one({
+            'username': user_data['username'],
+            'university_name': user_data['university_name'],
+            'training_id': user_data['training_id'],
+            'is_active': True
+        })
+        if existing_user:
+            return {
+                'success': False,
+                'message': 'A user with same username and training ID in this university already exists'
+            }
 
         # Add timestamp
         user_data['created_at'] = datetime.utcnow()
