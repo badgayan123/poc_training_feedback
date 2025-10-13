@@ -13,6 +13,8 @@ class DatabaseManager:
         self.client = None
         self.db = None
         self.collection = None
+        self.users_collection = None
+        self.forms_collection = None
         self.connect()
     
     def connect(self):
@@ -33,6 +35,8 @@ class DatabaseManager:
             self.client = None
             self.db = None
             self.collection = None
+            self.users_collection = None
+            self.forms_collection = None
             logger.warning("Running in offline mode - database operations will be simulated")
     
     def close_connection(self):
