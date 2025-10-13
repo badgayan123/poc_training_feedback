@@ -282,7 +282,8 @@ def analyze_comprehensive_training_feedback(training_id: str, all_feedbacks: lis
                 "confidence": 0.6
             }
         
-        enhanced_analysis = _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, len(all_feedbacks))
+        polarization_score = _compute_polarization(all_feedbacks)
+        enhanced_analysis = _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, len(all_feedbacks), polarization_score)
         
         return {
             "training_id": training_id,
@@ -290,6 +291,10 @@ def analyze_comprehensive_training_feedback(training_id: str, all_feedbacks: lis
             "qualitative_analysis": qualitative_analysis,
             "quantitative_insights": quantitative_insights,
             "enhanced_analysis": enhanced_analysis,
+            "polarization": {
+                "score": polarization_score,
+                "level": "high" if polarization_score >= 75 else ("medium" if polarization_score >= 50 else "low")
+            },
             "data_summary": {
                 "quantitative_responses": len(quantitative_data),
                 "qualitative_responses": len(qualitative_texts),
@@ -311,7 +316,7 @@ def analyze_comprehensive_training_feedback(training_id: str, all_feedbacks: lis
 # Helper functions
 # -----------------------------------------
 
-def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, total_feedbacks):
+def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, total_feedbacks, polarization_score=0):
     """
     Generates enhanced analysis including polarization detection
     """
@@ -346,7 +351,8 @@ def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_
         "key_strengths": qualitative_analysis.get("strengths", []),
         "critical_improvements": qualitative_analysis.get("concerns", []),
         "quantitative_insights": quantitative_insights,
-        "polarization_detected": polarization_detected,
+        "polarization_detected": polarization_detected or polarization_score >= 50,
+        "polarization_score": round(polarization_score, 1),
         "polarization_solutions": polarization_solutions,
         "recommendations": qualitative_analysis.get("suggestions", []),
         "risk_level": "medium",
@@ -368,6 +374,74 @@ def _create_enhanced_polarization_solutions(polarization_detected, quantitative_
     }
 
     return solutions
+
+
+def _compute_polarization(all_feedbacks: list) -> float:
+    """
+    Compute a polarization percentage based on contradictory responses.
+    Heuristics:
+    - From quantitative: count pairs of metrics that are semantically close
+      (e.g., communication_skills vs clarity_explanation/understanding proxies) with opposite extremes.
+    - From qualitative: if the same feedback contains conflicting sentiment keywords (good vs bad) adjacent categories, count contradiction.
+    - Return percentage of feedbacks that have at least one contradiction, scaled to 0-100.
+    """
+    if not all_feedbacks:
+        return 0.0
+
+    # Metric pairs to compare for contradiction (expandable)
+    metric_pairs = [
+        ("communication_skills", "clarity_explanation"),
+        ("communication_skills", "overall_satisfaction"),
+        ("clarity_explanation", "overall_satisfaction"),
+    ]
+
+    positive_words = {"good", "great", "excellent", "amazing", "clear", "understandable"}
+    negative_words = {"bad", "terrible", "confusing", "unclear", "boring", "difficult", "hard", "poor"}
+
+    contradictory_count = 0
+
+    for fb in all_feedbacks:
+        has_contradiction = False
+
+        # Quantitative contradictions: one metric very high (>=5) and paired metric very low (<=1)
+        q = fb.get("quantitative") or {}
+        for a, b in metric_pairs:
+            va = q.get(a)
+            vb = q.get(b)
+            if isinstance(va, (int, float)) and isinstance(vb, (int, float)):
+                if (va >= 5 and vb <= 1) or (vb >= 5 and va <= 1):
+                    has_contradiction = True
+                    break
+
+        # Qualitative contradictions: contains both a positive and a negative keyword
+        if not has_contradiction:
+            qual = fb.get("qualitative") or {}
+            text = " ".join([str(v) for v in qual.values() if isinstance(v, str)])
+            lower = text.lower()
+            if lower:
+                contains_pos = any(w in lower for w in positive_words)
+                contains_neg = any(w in lower for w in negative_words)
+                if contains_pos and contains_neg:
+                    has_contradiction = True
+
+        # Dynamic structured answers, if present
+        if not has_contradiction:
+            dyn = fb.get("dynamic_answers") or []
+            # If any pair of answers within the same feedback shows extremes and neutralizing text
+            choice_vals = [d.get("value") for d in dyn if d.get("type") == "choice" and isinstance(d.get("value"), (int, float))]
+            if any(v >= 5 for v in choice_vals) and any(v <= 1 for v in choice_vals):
+                has_contradiction = True
+            else:
+                texts = " ".join([str(d.get("value")) for d in dyn if d.get("type") == "subjective" and isinstance(d.get("value"), str)])
+                lower2 = texts.lower()
+                if lower2:
+                    if any(w in lower2 for w in positive_words) and any(w in lower2 for w in negative_words):
+                        has_contradiction = True
+
+        if has_contradiction:
+            contradictory_count += 1
+
+    return round((contradictory_count / len(all_feedbacks)) * 100.0, 1)
 
 # -----------------------------
 # Example usage
