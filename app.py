@@ -3,8 +3,8 @@ from flask_cors import CORS
 from db import (
     insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query,
     insert_user, get_users, get_user_by_credentials, update_user, delete_user,
-    create_feedback_form, list_feedback_forms, get_feedback_form_by_training,
-    update_feedback_form, delete_feedback_form, export_feedback_forms_csv
+    create_feedback_form, list_feedback_forms, get_feedback_form_by_training_id,
+    get_feedback_form_by_id, update_feedback_form, delete_feedback_form, export_feedback_forms_csv
 )
 from config import Config
 # Removed feedback_form import - using inline validation
@@ -591,100 +591,173 @@ def admin_export_users():
 @app.route('/admin/forms', methods=['POST'])
 @require_admin
 def admin_create_form():
+    """Create new feedback form (admin only)"""
     try:
-        data = request.get_json() or {}
-        # Mirror user-creation style validation: clear, field-wise checks
-        required_fields = ['university_name', 'training_id']
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No data provided'
+            }), 400
+        
+        # Validate required fields
+        required_fields = ['university_name', 'training_id', 'questions']
         for field in required_fields:
-            if field not in data or not str(data.get(field) or '').strip():
-                return jsonify({'success': False, 'message': f'{field} is required'}), 400
-
-        # Questions must be an array with at least one item
-        questions = data.get('questions')
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'{field.replace("_", " ").title()} is required'
+                }), 400
+        
+        # Validate questions array
+        questions = data.get('questions', [])
         if not isinstance(questions, list) or len(questions) == 0:
-            return jsonify({'success': False, 'message': 'At least one question is required'}), 400
-
-        # Delegate to DB layer (which normalizes/limits and auto-fills empty question text)
+            return jsonify({
+                'success': False,
+                'message': 'At least one question is required'
+            }), 400
+        
         result = create_feedback_form(data)
-        status = 201 if result.get('success') else 400
-        return jsonify(result), status
+        
+        if result['success']:
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+            
     except Exception as e:
         logger.error(f"Error creating form: {e}")
-        return jsonify({'success': False, 'message': f'Failed to create form: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Failed to create form due to server error'
+        }), 500
 
 
 @app.route('/admin/forms', methods=['GET'])
 @require_admin
 def admin_list_forms():
+    """Get all feedback forms (admin only)"""
     try:
-        grouped = request.args.get('grouped') == '1'
-        result = list_feedback_forms(group_by_university=grouped)
-        status = 200 if result.get('success') else 500
-        return jsonify(result), status
+        grouped = request.args.get('grouped', 'false').lower() == 'true'
+        result = list_feedback_forms(grouped_by_university=grouped)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+            
     except Exception as e:
         logger.error(f"Error listing forms: {e}")
-        return jsonify({'success': False, 'message': 'Failed to list forms'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Failed to list forms due to server error'
+        }), 500
 
 
 @app.route('/admin/forms/<form_id>', methods=['PUT'])
 @require_admin
 def admin_update_form(form_id):
+    """Update feedback form (admin only)"""
     try:
-        data = request.get_json() or {}
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No data provided'
+            }), 400
+        
         result = update_feedback_form(form_id, data)
-        status = 200 if result.get('success') else 400
-        return jsonify(result), status
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
     except Exception as e:
         logger.error(f"Error updating form: {e}")
-        return jsonify({'success': False, 'message': 'Failed to update form'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Failed to update form due to server error'
+        }), 500
 
 
 @app.route('/admin/forms/<form_id>', methods=['DELETE'])
 @require_admin
 def admin_delete_form(form_id):
+    """Delete feedback form (admin only)"""
     try:
         result = delete_feedback_form(form_id)
-        status = 200 if result.get('success') else 400
-        return jsonify(result), status
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
     except Exception as e:
         logger.error(f"Error deleting form: {e}")
-        return jsonify({'success': False, 'message': 'Failed to delete form'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Failed to delete form due to server error'
+        }), 500
 
 
 @app.route('/admin/forms/export', methods=['GET'])
 @require_admin
 def admin_export_forms():
+    """Export feedback forms to CSV (admin only)"""
     try:
         result = export_feedback_forms_csv()
-        status = 200 if result.get('success') else 500
-        return jsonify(result), status
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+            
     except Exception as e:
         logger.error(f"Error exporting forms: {e}")
-        return jsonify({'success': False, 'message': 'Failed to export forms'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Failed to export forms due to server error'
+        }), 500
 
 
 @app.route('/forms/by_training/<training_id>', methods=['GET'])
 def get_form_by_training(training_id):
+    """Get feedback form by training ID (public)"""
     try:
-        result = get_feedback_form_by_training(training_id)
-        status = 200 if result.get('success') else 500
-        return jsonify(result), status
+        result = get_feedback_form_by_training_id(training_id)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 404
+            
     except Exception as e:
-        logger.error(f"Error getting form by training: {e}")
-        return jsonify({'success': False, 'message': 'Failed to get form'}), 500
-
-from db import get_feedback_form_by_id
+        logger.error(f"Error getting form by training ID: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to get form due to server error'
+        }), 500
 
 @app.route('/admin/forms/<form_id>', methods=['GET'])
 @require_admin
 def admin_get_form_by_id(form_id):
+    """Get feedback form by ID (admin only)"""
     try:
         result = get_feedback_form_by_id(form_id)
-        status = 200 if result.get('success') else 404
-        return jsonify(result), status
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 404
+            
     except Exception as e:
-        logger.error(f"Error getting form by id: {e}")
-        return jsonify({'success': False, 'message': 'Failed to get form'}), 500
+        logger.error(f"Error getting form by ID: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to get form due to server error'
+        }), 500
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():

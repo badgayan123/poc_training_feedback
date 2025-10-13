@@ -449,7 +449,7 @@ def create_feedback_form(form_data: dict) -> dict:
     Limits: up to 10 choice, up to 10 subjective, max total 20.
     """
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             logger.warning("Database offline - simulating form creation")
             return {"success": True, "inserted_id": "simulated_form_id", "message": "Offline mode - form not saved"}
 
@@ -501,9 +501,9 @@ def create_feedback_form(form_data: dict) -> dict:
 
 def list_feedback_forms(group_by_university: bool = False) -> dict:
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             return {"success": True, "data": []}
-        cursor = db_manager.forms_collection.find({'is_active': True}).sort('created_at', -1)
+        cursor = db_manager.forms_collection.find({}).sort('created_at', -1)
         forms = []
         for doc in cursor:
             doc['_id'] = str(doc['_id'])
@@ -522,7 +522,7 @@ def list_feedback_forms(group_by_university: bool = False) -> dict:
 
 def get_feedback_form_by_training(training_id: str) -> dict:
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             return {"success": True, "data": None}
         form = db_manager.forms_collection.find_one({'training_id': (training_id or '').upper(), 'is_active': True})
         if not form:
@@ -536,7 +536,7 @@ def get_feedback_form_by_training(training_id: str) -> dict:
 
 def update_feedback_form(form_id: str, update_data: dict) -> dict:
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             return {"success": False, "message": "Database offline"}
         if 'questions' in update_data:
             questions = update_data.get('questions') or []
@@ -556,7 +556,7 @@ def update_feedback_form(form_id: str, update_data: dict) -> dict:
 
 def delete_feedback_form(form_id: str) -> dict:
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             return {"success": False, "message": "Database offline"}
         result = db_manager.forms_collection.update_one({'_id': ObjectId(form_id)}, {'$set': {'is_active': False, 'updated_at': datetime.utcnow()}})
         if result.modified_count > 0:
@@ -587,7 +587,7 @@ def export_feedback_forms_csv() -> dict:
 def get_feedback_form_by_id(form_id: str) -> dict:
     """Fetch a single feedback form by ObjectId string."""
     try:
-        if not db_manager.forms_collection:
+        if db_manager.forms_collection is None:
             return {"success": False, "message": "Database offline"}
         form = db_manager.forms_collection.find_one({'_id': ObjectId(form_id), 'is_active': True})
         if not form:
