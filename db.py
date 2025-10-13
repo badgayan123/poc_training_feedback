@@ -244,6 +244,13 @@ def insert_user(user_data):
                 'message': 'Username already exists'
             }
         
+        # Normalize/validate
+        user_data['username'] = (user_data.get('username') or '').strip()
+        user_data['password'] = (user_data.get('password') or '').strip()
+        user_data['university_name'] = (user_data.get('university_name') or '').strip()
+        user_data['training_id'] = (user_data.get('training_id') or '').strip().upper()
+        user_data['course_name'] = (user_data.get('course_name') or '').strip()
+
         # Add timestamp
         user_data['created_at'] = datetime.utcnow()
         user_data['is_active'] = True
@@ -337,6 +344,9 @@ def get_user_by_credentials(username, password):
         
         # Convert ObjectId to string
         user['_id'] = str(user['_id'])
+        # Ensure training_id uppercase and include course_name
+        user['training_id'] = (user.get('training_id') or '').upper()
+        user['course_name'] = user.get('course_name') or ''
         
         logger.info(f"User authenticated successfully: {username}")
         return {

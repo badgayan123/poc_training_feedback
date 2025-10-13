@@ -365,6 +365,7 @@ def user_login():
             session['username'] = result['data']['username']
             session['university_name'] = result['data']['university_name']
             session['training_id'] = result['data']['training_id']
+            session['course_name'] = result['data'].get('course_name')
             
             return jsonify({
                 'success': True,
@@ -372,7 +373,8 @@ def user_login():
                 'user_data': {
                     'username': result['data']['username'],
                     'university_name': result['data']['university_name'],
-                    'training_id': result['data']['training_id']
+                    'training_id': result['data']['training_id'],
+                    'course_name': result['data'].get('course_name')
                 }
             }), 200
         else:
@@ -397,6 +399,7 @@ def user_logout():
         session.pop('username', None)
         session.pop('university_name', None)
         session.pop('training_id', None)
+        session.pop('course_name', None)
         
         return jsonify({
             'success': True,
@@ -420,7 +423,8 @@ def user_status():
                 'user_data': {
                     'username': session.get('username'),
                     'university_name': session.get('university_name'),
-                    'training_id': session.get('training_id')
+                    'training_id': session.get('training_id'),
+                    'course_name': session.get('course_name')
                 }
             }), 200
         else:
@@ -469,7 +473,7 @@ def admin_add_user():
             }), 400
         
         # Validate required fields
-        required_fields = ['username', 'password', 'university_name', 'training_id']
+        required_fields = ['username', 'password', 'university_name', 'training_id', 'course_name']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({
