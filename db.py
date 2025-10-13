@@ -468,8 +468,9 @@ def create_feedback_form(form_data: dict) -> dict:
                 continue
             questions.append({'type': qtype, 'text': qtext})
 
-        if not university_name or not course_name or not training_id:
-            return {"success": False, "message": "university_name, course_name, training_id are required"}
+        # Relax validation: course_name is optional
+        if not university_name or not training_id:
+            return {"success": False, "message": "university_name and training_id are required"}
         if not questions:
             return {"success": False, "message": "At least one valid question is required"}
 

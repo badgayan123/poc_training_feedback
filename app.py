@@ -598,7 +598,7 @@ def admin_create_form():
         return jsonify(result), status
     except Exception as e:
         logger.error(f"Error creating form: {e}")
-        return jsonify({'success': False, 'message': 'Failed to create form'}), 500
+        return jsonify({'success': False, 'message': f'Failed to create form: {str(e)}'}), 500
 
 
 @app.route('/admin/forms', methods=['GET'])
