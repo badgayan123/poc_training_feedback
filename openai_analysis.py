@@ -282,13 +282,17 @@ def analyze_comprehensive_training_feedback(training_id: str, all_feedbacks: lis
                 "confidence": 0.6
             }
         
-        enhanced_analysis = _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, len(all_feedbacks))
+        # Calculate polarization check
+        polarization_analysis = _compute_polarization_analysis(all_feedbacks)
+        
+        enhanced_analysis = _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, len(all_feedbacks), polarization_analysis)
         
         return {
             "training_id": training_id,
             "total_participants": len(all_feedbacks),
             "qualitative_analysis": qualitative_analysis,
             "quantitative_insights": quantitative_insights,
+            "polarization_check": polarization_analysis,
             "enhanced_analysis": enhanced_analysis,
             "data_summary": {
                 "quantitative_responses": len(quantitative_data),
@@ -311,7 +315,156 @@ def analyze_comprehensive_training_feedback(training_id: str, all_feedbacks: lis
 # Helper functions
 # -----------------------------------------
 
-def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, total_feedbacks):
+def _compute_polarization_analysis(all_feedbacks: list) -> dict:
+    """
+    Compute polarization analysis based on contradictory responses in quantitative feedback.
+    
+    Polarization occurs when participants give extreme opposing ratings for related questions.
+    For example: 5/5 for communication skills but 1/5 for understanding the trainer.
+    
+    Returns:
+        dict: Polarization analysis with score, level, and detailed breakdown
+    """
+    try:
+        if not all_feedbacks:
+            return {
+                "polarization_score": 0.0,
+                "polarization_level": "low",
+                "contradictory_responses": 0,
+                "total_responses": 0,
+                "analysis": "No feedback data available for polarization analysis"
+            }
+        
+        contradictory_responses = 0
+        total_responses = 0
+        polarization_details = []
+        
+        # Define related question pairs for polarization detection
+        related_question_pairs = [
+            ("content_quality", "clarity_of_explanation"),
+            ("trainer_effectiveness", "clarity_of_explanation"),
+            ("trainer_effectiveness", "engagement_interaction"),
+            ("content_quality", "practical_relevance"),
+            ("clarity_of_explanation", "practical_relevance")
+        ]
+        
+        for feedback in all_feedbacks:
+            if 'quantitative' not in feedback:
+                continue
+                
+            quantitative = feedback['quantitative']
+            total_responses += 1
+            
+            # Check for contradictory responses within this participant's feedback
+            is_contradictory = False
+            contradiction_details = []
+            
+            for question1, question2 in related_question_pairs:
+                if question1 in quantitative and question2 in quantitative:
+                    val1 = quantitative[question1]
+                    val2 = quantitative[question2]
+                    
+                    # Check for extreme opposite ratings (e.g., 5 and 1, or 4 and 1, or 5 and 2)
+                    if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+                        rating_diff = abs(val1 - val2)
+                        if rating_diff >= 3:  # Significant difference (e.g., 5-1=4, 5-2=3, 4-1=3)
+                            is_contradictory = True
+                            contradiction_details.append({
+                                "question_pair": f"{question1} vs {question2}",
+                                "ratings": f"{val1} vs {val2}",
+                                "difference": rating_diff
+                            })
+            
+            # Also check for overall extreme variance in ratings
+            if not is_contradictory:
+                ratings = [v for v in quantitative.values() if isinstance(v, (int, float)) and 1 <= v <= 5]
+                if len(ratings) >= 3:  # Need at least 3 ratings to check variance
+                    min_rating = min(ratings)
+                    max_rating = max(ratings)
+                    if max_rating - min_rating >= 3:  # High variance indicates contradiction
+                        is_contradictory = True
+                        contradiction_details.append({
+                            "question_pair": "overall_variance",
+                            "ratings": f"min: {min_rating}, max: {max_rating}",
+                            "difference": max_rating - min_rating
+                        })
+            
+            if is_contradictory:
+                contradictory_responses += 1
+                polarization_details.append({
+                    "participant": feedback.get('student_name', 'Anonymous'),
+                    "contradictions": contradiction_details
+                })
+        
+        # Calculate polarization score (percentage of contradictory responses)
+        polarization_score = (contradictory_responses / total_responses * 100) if total_responses > 0 else 0.0
+        
+        # Determine polarization level
+        if polarization_score >= 75:
+            polarization_level = "high"
+        elif polarization_score >= 50:
+            polarization_level = "medium"
+        else:
+            polarization_level = "low"
+        
+        # Generate analysis summary
+        if polarization_score == 0:
+            analysis = "No polarization detected. Responses are consistent across all participants."
+        elif polarization_level == "low":
+            analysis = f"Low polarization detected ({polarization_score:.1f}%). Most participants provided consistent feedback."
+        elif polarization_level == "medium":
+            analysis = f"Medium polarization detected ({polarization_score:.1f}%). Some participants provided contradictory feedback that needs attention."
+        else:
+            analysis = f"High polarization detected ({polarization_score:.1f}%). Significant contradictory responses indicate potential issues with training delivery or content."
+        
+        return {
+            "polarization_score": round(polarization_score, 2),
+            "polarization_level": polarization_level,
+            "contradictory_responses": contradictory_responses,
+            "total_responses": total_responses,
+            "analysis": analysis,
+            "details": polarization_details[:10],  # Limit to first 10 for performance
+            "recommendations": _get_polarization_recommendations(polarization_level, polarization_score)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error computing polarization analysis: {e}")
+        return {
+            "polarization_score": 0.0,
+            "polarization_level": "low",
+            "contradictory_responses": 0,
+            "total_responses": 0,
+            "analysis": f"Error in polarization analysis: {str(e)}",
+            "details": [],
+            "recommendations": []
+        }
+
+def _get_polarization_recommendations(polarization_level: str, polarization_score: float) -> list:
+    """Generate recommendations based on polarization level"""
+    recommendations = []
+    
+    if polarization_level == "high":
+        recommendations.extend([
+            "Conduct follow-up interviews with participants to understand the reasons for contradictory feedback",
+            "Review training content and delivery methods to identify potential confusion points",
+            "Consider segmenting participants by experience level or background for future sessions",
+            "Implement mid-session feedback collection to address issues in real-time"
+        ])
+    elif polarization_level == "medium":
+        recommendations.extend([
+            "Analyze specific question pairs where contradictions occur most frequently",
+            "Consider providing clearer instructions or examples for rating criteria",
+            "Follow up with participants who provided contradictory feedback for clarification"
+        ])
+    else:
+        recommendations.extend([
+            "Continue current training approach as feedback is generally consistent",
+            "Monitor for any emerging patterns in future sessions"
+        ])
+    
+    return recommendations
+
+def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_analysis, total_feedbacks, polarization_analysis=None):
     """
     Generates enhanced analysis including polarization detection
     """
@@ -339,6 +492,16 @@ def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_
         polarization_detected, quantitative_insights, overall_avg, poor_percentage, excellent_percentage, total_participants
     )
 
+    # Include polarization analysis in enhanced analysis
+    polarization_info = {}
+    if polarization_analysis:
+        polarization_info = {
+            "polarization_score": polarization_analysis.get("polarization_score", 0),
+            "polarization_level": polarization_analysis.get("polarization_level", "low"),
+            "polarization_analysis": polarization_analysis.get("analysis", ""),
+            "polarization_recommendations": polarization_analysis.get("recommendations", [])
+        }
+    
     return {
         "executive_summary": f"Processed {total_feedbacks} feedbacks for training {training_id}.",
         "overall_sentiment": qualitative_analysis.get("sentiment", "neutral"),
@@ -348,6 +511,7 @@ def _generate_enhanced_analysis(training_id, quantitative_insights, qualitative_
         "quantitative_insights": quantitative_insights,
         "polarization_detected": polarization_detected,
         "polarization_solutions": polarization_solutions,
+        "polarization_check": polarization_info,
         "recommendations": qualitative_analysis.get("suggestions", []),
         "risk_level": "medium",
         "priority_areas": ["Content quality", "Trainer effectiveness"],
