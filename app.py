@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
-from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query
+from db import insert_feedback, get_feedback, get_feedback_stats, get_feedback_by_query, delete_feedback, delete_feedback_by_training_id, insert_university_course, get_university_courses, delete_university_course, validate_university_course
 from config import Config
 # Removed feedback_form import - using inline validation
 from openai_analysis import analyze_text_feedback, analyze_comprehensive_training_feedback
@@ -322,6 +322,184 @@ def admin_verify():
         return jsonify({
             'success': False,
             'message': 'Session verification failed'
+        }), 500
+
+@app.route('/admin/delete_feedback', methods=['DELETE'])
+@require_admin
+def admin_delete_feedback():
+    """Delete a specific feedback by ID (Admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'feedback_id' not in data:
+            return jsonify({
+                'success': False,
+                'message': 'feedback_id is required'
+            }), 400
+        
+        feedback_id = data['feedback_id']
+        
+        # Delete the feedback
+        result = delete_feedback(feedback_id)
+        
+        if result['success']:
+            logger.info(f"Admin deleted feedback with ID: {feedback_id}")
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in admin delete feedback: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Delete failed: {str(e)}'
+        }), 500
+
+@app.route('/admin/delete_training_feedback', methods=['DELETE'])
+@require_admin
+def admin_delete_training_feedback():
+    """Delete all feedback for a specific training ID (Admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'training_id' not in data:
+            return jsonify({
+                'success': False,
+                'message': 'training_id is required'
+            }), 400
+        
+        training_id = data['training_id']
+        
+        # Delete all feedback for this training ID
+        result = delete_feedback_by_training_id(training_id)
+        
+        if result['success']:
+            logger.info(f"Admin deleted all feedback for training ID: {training_id}")
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in admin delete training feedback: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Delete failed: {str(e)}'
+        }), 500
+
+# University Database Management Endpoints
+
+@app.route('/admin/university_courses', methods=['GET'])
+@require_admin
+def get_university_courses_admin():
+    """Get all university courses (Admin only)"""
+    try:
+        result = get_university_courses()
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
+        logger.error(f"Error in get university courses: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Internal server error: {str(e)}',
+            'data': []
+        }), 500
+
+@app.route('/admin/university_courses', methods=['POST'])
+@require_admin
+def add_university_course():
+    """Add a new university course (Admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No JSON data provided'
+            }), 400
+        
+        # Validate required fields
+        required_fields = ['university_name', 'course', 'training_id']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'{field} is required'
+                }), 400
+        
+        # Insert university course
+        result = insert_university_course(data)
+        
+        if result['success']:
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in add university course: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Internal server error: {str(e)}'
+        }), 500
+
+@app.route('/admin/university_courses/<course_id>', methods=['DELETE'])
+@require_admin
+def delete_university_course_admin(course_id):
+    """Delete a university course (Admin only)"""
+    try:
+        result = delete_university_course(course_id)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in delete university course: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Internal server error: {str(e)}'
+        }), 500
+
+@app.route('/validate_university_course', methods=['POST'])
+def validate_university_course_endpoint():
+    """Validate university course combination (Public endpoint)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No JSON data provided'
+            }), 400
+        
+        # Validate required fields
+        required_fields = ['university_name', 'course', 'training_id']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'{field} is required'
+                }), 400
+        
+        # Validate university course
+        result = validate_university_course(
+            data['university_name'],
+            data['course'],
+            data['training_id']
+        )
+        
+        return jsonify(result), 200 if result['success'] else 400
+            
+    except Exception as e:
+        logger.error(f"Error in validate university course: {e}")
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'message': f'Internal server error: {str(e)}'
         }), 500
 
 @app.route('/admin/test', methods=['GET'])

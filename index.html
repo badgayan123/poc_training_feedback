@@ -36,6 +36,7 @@
                 <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
                 <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 hidden">User Dashboard</button>
                 <button onclick="showSection('database')" id="database-btn" class="px-6 py-2 rounded-md bg-teal-500 text-white font-medium ml-2 hidden">Database Dashboard</button>
+                <button onclick="showSection('university')" id="university-btn" class="px-6 py-2 rounded-md bg-yellow-500 text-white font-medium ml-2 hidden">University Database</button>
             </div>
         </div>
 
@@ -84,6 +85,31 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
                         <input type="text" id="subject_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+                </div>
+                
+                <!-- University Details -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-semibold text-yellow-800 mb-4">University Details (Required for Validation)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
+                            <input type="text" id="university_name_form" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" style="text-transform: uppercase;" placeholder="Enter university name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Course *</label>
+                            <input type="text" id="course_form" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" style="text-transform: uppercase;" placeholder="Enter course name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
+                            <input type="text" id="training_id_form" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" style="text-transform: uppercase;" placeholder="Enter training ID">
+                        </div>
+                    </div>
+                    <p class="text-sm text-yellow-700 mt-2">
+                        <strong>Note:</strong> These details must match exactly with the university database for feedback submission to be successful.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Trainer Name *</label>
                         <select id="trainer_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -398,6 +424,7 @@
                     <input type="text" id="student_training_id" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter training ID">
                     <button onclick="loadStudentFeedback()" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">Load Student Feedback</button>
                     <button onclick="downloadExcel()" id="download-excel-btn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Excel</button>
+                    <button onclick="deleteAllStudentFeedback()" id="delete-all-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>🗑️ Delete All</button>
                 </div>
             </div>
 
@@ -451,6 +478,15 @@
                     </select>
                 </div>
                 
+                <!-- Bulk Delete by Training ID -->
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700">Delete Training:</label>
+                    <input type="text" id="bulk-delete-training-id" placeholder="Enter Training ID" class="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <button onclick="bulkDeleteTraining()" class="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        🗑️ Delete All
+                    </button>
+                </div>
+                
                 <span id="database-loading" class="ml-4 text-gray-500 hidden">Loading...</span>
             </div>
             
@@ -468,11 +504,12 @@
                             <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</th>
                             <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
                             <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                            <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="database-table-body" class="bg-white divide-y divide-gray-200">
                         <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Click "Refresh Data" to load database entries</td>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">Click "Refresh Data" to load database entries</td>
                         </tr>
                     </tbody>
                 </table>
@@ -480,6 +517,58 @@
             
             <div id="database-error" class="hidden mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
                 <p id="database-error-message"></p>
+            </div>
+        </div>
+
+        <!-- University Database Section (Admin Only) -->
+        <div id="university-section" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">University Database Management</h2>
+            
+            <!-- Add New University Course -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add New University Course</h3>
+                <form id="university-course-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
+                            <input type="text" id="university_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Enter university name" style="text-transform: uppercase;">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Course *</label>
+                            <input type="text" id="course" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Enter course name" style="text-transform: uppercase;">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Training ID *</label>
+                            <input type="text" id="university_training_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Enter training ID" style="text-transform: uppercase;">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 font-medium">
+                        Add University Course
+                    </button>
+                </form>
+                <div id="university-form-status" class="mt-4"></div>
+            </div>
+            
+            <!-- University Courses List -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">University Courses</h3>
+                    <button onclick="loadUniversityCourses()" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 font-medium">
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="university-loading" class="text-center text-gray-500 py-4 hidden">
+                    Loading university courses...
+                </div>
+                
+                <div id="university-courses-content">
+                    <!-- University courses will be loaded here -->
+                </div>
+            </div>
+            
+            <div id="university-error" class="hidden mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                <p id="university-error-message"></p>
             </div>
         </div>
     </div>
@@ -495,7 +584,7 @@
         let lastUsersCache = null;
         function showSection(section) {
             // Check if trying to access admin-protected sections
-            if (['analysis', 'dashboard', 'student', 'database'].includes(section)) {
+            if (['analysis', 'dashboard', 'student', 'database', 'university'].includes(section)) {
                 if (!isAdminLoggedIn()) {
                     alert('Please login as admin to access this section');
                     return;
@@ -510,6 +599,7 @@
             document.getElementById('admin-section').classList.add('hidden');
             const usersSection = document.getElementById('users-section'); if (usersSection) usersSection.classList.add('hidden');
             const databaseSection = document.getElementById('database-section'); if (databaseSection) databaseSection.classList.add('hidden');
+            const universitySection = document.getElementById('university-section'); if (universitySection) universitySection.classList.add('hidden');
 
             // Clear any existing auto-refresh timer when switching sections
             if (usersRefreshTimer) {
@@ -564,6 +654,7 @@
             document.getElementById('student-feedback-btn').classList.remove('hidden');
             document.getElementById('users-btn').classList.remove('hidden');
             document.getElementById('database-btn').classList.remove('hidden');
+            document.getElementById('university-btn').classList.remove('hidden');
         }
 
         // Disable admin features
@@ -573,6 +664,7 @@
             document.getElementById('student-feedback-btn').classList.add('hidden');
             document.getElementById('users-btn').classList.add('hidden');
             document.getElementById('database-btn').classList.add('hidden');
+            document.getElementById('university-btn').classList.add('hidden');
         }
 
         async function loadActiveUsers() {
@@ -911,6 +1003,14 @@
                         </div>
                     </div>
                     
+                    <!-- Polarity Detection Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Polarity Analysis</h3>
+                        <div id="polarity-analysis-content">
+                            <!-- Polarity content will be populated here -->
+                        </div>
+                    </div>
+                    
                     <!-- Quantitative Metrics with Sliders -->
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <h3 class="text-xl font-bold text-gray-800 mb-6">Quantitative Performance Metrics</h3>
@@ -958,6 +1058,10 @@
                 </div>
             `;
             
+            // Calculate and display polarity analysis
+            const polarityAnalysis = calculatePolarityAnalysis(feedbacks);
+            displayPolarityAnalysis(polarityAnalysis);
+            
             // Draw charts after content is loaded
             setTimeout(() => {
                 drawTrendChart(trends.sessionData);
@@ -965,6 +1069,505 @@
             }, 100);
             
             resultsDiv.classList.remove('hidden');
+        }
+
+        // Calculate polarity analysis from feedback data
+        function calculatePolarityAnalysis(feedbacks) {
+            const allRatings = [];
+            const sessionPolarity = {};
+            
+            // Group by training_id to analyze each session
+            const sessions = {};
+            feedbacks.forEach(feedback => {
+                const sessionId = feedback.training_id;
+                if (!sessions[sessionId]) {
+                    sessions[sessionId] = [];
+                }
+                sessions[sessionId].push(feedback);
+            });
+            
+            // Analyze each session for polarity
+            Object.entries(sessions).forEach(([sessionId, sessionFeedbacks]) => {
+                const sessionRatings = [];
+                
+                sessionFeedbacks.forEach(feedback => {
+                    if (feedback.quantitative) {
+                        Object.values(feedback.quantitative).forEach(rating => {
+                            if (typeof rating === 'number' && rating > 0) {
+                                sessionRatings.push(rating);
+                                allRatings.push(rating);
+                            }
+                        });
+                    }
+                });
+                
+                if (sessionRatings.length > 0) {
+                    const poorCount = sessionRatings.filter(r => r <= 2).length;
+                    const excellentCount = sessionRatings.filter(r => r >= 4).length;
+                    const totalCount = sessionRatings.length;
+                    
+                    const poorPercentage = (poorCount / totalCount) * 100;
+                    const excellentPercentage = (excellentCount / totalCount) * 100;
+                    
+                    sessionPolarity[sessionId] = {
+                        totalRatings: totalCount,
+                        poorCount,
+                        excellentCount,
+                        poorPercentage: poorPercentage.toFixed(1),
+                        excellentPercentage: excellentPercentage.toFixed(1),
+                        isPolarized: poorPercentage > 20 && excellentPercentage > 20,
+                        averageRating: (sessionRatings.reduce((sum, r) => sum + r, 0) / totalCount).toFixed(1)
+                    };
+                }
+            });
+            
+            // Calculate overall polarity
+            const totalRatings = allRatings.length;
+            const overallPoorCount = allRatings.filter(r => r <= 2).length;
+            const overallExcellentCount = allRatings.filter(r => r >= 4).length;
+            const overallPoorPercentage = totalRatings > 0 ? (overallPoorCount / totalRatings) * 100 : 0;
+            const overallExcellentPercentage = totalRatings > 0 ? (overallExcellentCount / totalRatings) * 100 : 0;
+            
+            const isPolarized = overallPoorPercentage > 20 && overallExcellentPercentage > 20;
+            
+            return {
+                overall: {
+                    totalRatings,
+                    poorCount: overallPoorCount,
+                    excellentCount: overallExcellentCount,
+                    poorPercentage: overallPoorPercentage.toFixed(1),
+                    excellentPercentage: overallExcellentPercentage.toFixed(1),
+                    isPolarized,
+                    averageRating: totalRatings > 0 ? (allRatings.reduce((sum, r) => sum + r, 0) / totalRatings).toFixed(1) : 0
+                },
+                sessions: sessionPolarity,
+                polarizedSessions: Object.entries(sessionPolarity).filter(([_, data]) => data.isPolarized).length,
+                totalSessions: Object.keys(sessionPolarity).length
+            };
+        }
+        
+        // Display polarity analysis results
+        function displayPolarityAnalysis(polarityAnalysis) {
+            const contentDiv = document.getElementById('polarity-analysis-content');
+            
+            const { overall, sessions, polarizedSessions, totalSessions } = polarityAnalysis;
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Overall Polarity Status -->
+                    <div class="p-6 rounded-lg ${overall.isPolarized ? 'bg-red-50 border-2 border-red-200' : 'bg-green-50 border-2 border-green-200'}">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-bold ${overall.isPolarized ? 'text-red-800' : 'text-green-800'}">
+                                ${overall.isPolarized ? '⚠️ Polarization Detected' : '✅ No Polarization Detected'}
+                            </h4>
+                            <div class="text-2xl">${overall.isPolarized ? '⚠️' : '✅'}</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${overall.poorPercentage > 20 ? 'text-red-600' : 'text-gray-600'}">${overall.poorPercentage}%</div>
+                                <div class="text-sm text-gray-600">Poor Ratings (≤2)</div>
+                                <div class="text-xs text-gray-500">${overall.poorCount} out of ${overall.totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${overall.excellentPercentage > 20 ? 'text-green-600' : 'text-gray-600'}">${overall.excellentPercentage}%</div>
+                                <div class="text-sm text-gray-600">Excellent Ratings (≥4)</div>
+                                <div class="text-xs text-gray-500">${overall.excellentCount} out of ${overall.totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold text-blue-600">${overall.averageRating}</div>
+                                <div class="text-sm text-gray-600">Average Rating</div>
+                                <div class="text-xs text-gray-500">Overall Performance</div>
+                            </div>
+                        </div>
+                        
+                        ${overall.isPolarized ? `
+                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-yellow-800 mb-2">Polarization Alert</h5>
+                                <p class="text-sm text-yellow-700">
+                                    Significant divergence in feedback detected. Both poor (${overall.poorPercentage}%) and excellent (${overall.excellentPercentage}%) ratings exceed 20%, indicating mixed participant experiences.
+                                </p>
+                            </div>
+                        ` : `
+                            <div class="bg-green-100 border border-green-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-green-800 mb-2">Consistent Feedback</h5>
+                                <p class="text-sm text-green-700">
+                                    Feedback shows consistent patterns without significant polarization. Training quality appears uniform across participants.
+                                </p>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- Session-by-Session Analysis -->
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4">Session-by-Session Polarity Analysis</h4>
+                        <div class="text-sm text-gray-600 mb-4">
+                            ${polarizedSessions} out of ${totalSessions} sessions show polarization
+                        </div>
+                        
+                        <div class="space-y-3">
+                            ${Object.entries(sessions).map(([sessionId, data]) => `
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border ${data.isPolarized ? 'border-red-200 bg-red-50' : 'border-gray-200'}">
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-800">${sessionId}</div>
+                                        <div class="text-sm text-gray-600">${data.totalRatings} ratings | Avg: ${data.averageRating}</div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="text-center">
+                                            <div class="text-sm font-bold ${data.poorPercentage > 20 ? 'text-red-600' : 'text-gray-600'}">${data.poorPercentage}%</div>
+                                            <div class="text-xs text-gray-500">Poor</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-sm font-bold ${data.excellentPercentage > 20 ? 'text-green-600' : 'text-gray-600'}">${data.excellentPercentage}%</div>
+                                            <div class="text-xs text-gray-500">Excellent</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-lg">${data.isPolarized ? '⚠️' : '✅'}</div>
+                                            <div class="text-xs text-gray-500">${data.isPolarized ? 'Polarized' : 'Normal'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                        <h4 class="text-lg font-bold text-blue-800 mb-4">Recommendations</h4>
+                        <div class="space-y-3">
+                            ${overall.isPolarized ? `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Address Divergent Experiences</div>
+                                        <div class="text-sm text-blue-700">Investigate why some participants rate highly while others rate poorly. Consider different experience levels or learning styles.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Segmented Follow-up</div>
+                                        <div class="text-sm text-blue-700">Conduct separate follow-up sessions with high and low raters to understand their specific needs and concerns.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Content Adjustment</div>
+                                        <div class="text-sm text-blue-700">Modify training content to better address both groups' needs and ensure consistent learning outcomes.</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Maintain Current Approach</div>
+                                        <div class="text-sm text-green-700">The training is delivering consistent experiences. Continue with the current methodology and content structure.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Monitor for Changes</div>
+                                        <div class="text-sm text-green-700">Continue monitoring feedback patterns to ensure consistency is maintained as training evolves.</div>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display polarity analysis from backend data for specific training
+        function displayTrainingPolarityAnalysisFromBackend(data) {
+            const contentDiv = document.getElementById('training-polarity-content');
+            
+            // Extract polarity data from backend response
+            const enhancedAnalysis = data.enhanced_analysis || {};
+            const polarizationDetected = enhancedAnalysis.polarization_detected || false;
+            const polarizationSolutions = enhancedAnalysis.polarization_solutions || {};
+            const quantitativeInsights = data.quantitative_insights || {};
+            
+            // Calculate percentages from quantitative insights
+            let poorPercentage = 0;
+            let excellentPercentage = 0;
+            let totalRatings = 0;
+            let poorCount = 0;
+            let excellentCount = 0;
+            let averageRating = 0;
+            
+            if (quantitativeInsights && Object.keys(quantitativeInsights).length > 0) {
+                Object.values(quantitativeInsights).forEach(metric => {
+                    if (metric.distribution) {
+                        const total = metric.count || 0;
+                        const poor = metric.distribution.poor_1 || 0;
+                        const excellent = metric.distribution.excellent_5 || 0;
+                        
+                        totalRatings += total;
+                        poorCount += poor;
+                        excellentCount += excellent;
+                    }
+                });
+                
+                if (totalRatings > 0) {
+                    poorPercentage = (poorCount / totalRatings) * 100;
+                    excellentPercentage = (excellentCount / totalRatings) * 100;
+                }
+                
+                // Calculate average rating
+                const allRatings = [];
+                Object.values(quantitativeInsights).forEach(metric => {
+                    if (metric.average) {
+                        allRatings.push(metric.average);
+                    }
+                });
+                averageRating = allRatings.length > 0 ? 
+                    (allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length).toFixed(1) : 0;
+            }
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Overall Polarity Status for this Training -->
+                    <div class="p-6 rounded-lg ${polarizationDetected ? 'bg-red-50 border-2 border-red-200' : 'bg-green-50 border-2 border-green-200'}">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-bold ${polarizationDetected ? 'text-red-800' : 'text-green-800'}">
+                                ${polarizationDetected ? '⚠️ Polarization Detected in this Training' : '✅ No Polarization Detected in this Training'}
+                            </h4>
+                            <div class="text-2xl">${polarizationDetected ? '⚠️' : '✅'}</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${poorPercentage > 20 ? 'text-red-600' : 'text-gray-600'}">${poorPercentage.toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Poor Ratings (≤2)</div>
+                                <div class="text-xs text-gray-500">${poorCount} out of ${totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${excellentPercentage > 20 ? 'text-green-600' : 'text-gray-600'}">${excellentPercentage.toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Excellent Ratings (≥4)</div>
+                                <div class="text-xs text-gray-500">${excellentCount} out of ${totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold text-blue-600">${averageRating}</div>
+                                <div class="text-sm text-gray-600">Average Rating</div>
+                                <div class="text-xs text-gray-500">This Training</div>
+                            </div>
+                        </div>
+                        
+                        ${polarizationDetected ? `
+                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-yellow-800 mb-2">Training Polarization Alert</h5>
+                                <p class="text-sm text-yellow-700">
+                                    This training shows significant divergence in participant experiences. Both poor (${poorPercentage.toFixed(1)}%) and excellent (${excellentPercentage.toFixed(1)}%) ratings exceed 20%, indicating mixed participant satisfaction.
+                                </p>
+                            </div>
+                        ` : `
+                            <div class="bg-green-100 border border-green-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-green-800 mb-2">Consistent Training Experience</h5>
+                                <p class="text-sm text-green-700">
+                                    This training delivered consistent experiences across all participants. No significant polarization detected in feedback patterns.
+                                </p>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- Backend Polarity Solutions -->
+                    ${polarizationDetected && Object.keys(polarizationSolutions).length > 0 ? `
+                        <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                            <h4 class="text-lg font-bold text-blue-800 mb-4">AI-Generated Recommendations</h4>
+                            <div class="space-y-3">
+                                ${Object.entries(polarizationSolutions).map(([key, solution]) => `
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-blue-800">${key.replace('_', ' ').toUpperCase()}</div>
+                                            <div class="text-sm text-blue-700">${solution}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Training-Specific Recommendations -->
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                        <h4 class="text-lg font-bold text-blue-800 mb-4">Training-Specific Recommendations</h4>
+                        <div class="space-y-3">
+                            ${polarizationDetected ? `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Immediate Follow-up Required</div>
+                                        <div class="text-sm text-blue-700">Contact participants who rated poorly to understand specific concerns and areas for improvement.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Content Review</div>
+                                        <div class="text-sm text-blue-700">Review training materials and delivery methods to identify what worked for high raters vs. low raters.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Future Session Adjustments</div>
+                                        <div class="text-sm text-blue-700">Consider offering different difficulty levels or learning paths for future sessions of this training.</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Successful Training Delivery</div>
+                                        <div class="text-sm text-green-700">This training was delivered successfully with consistent participant satisfaction. Use as a model for future sessions.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Maintain Current Approach</div>
+                                        <div class="text-sm text-green-700">Continue using the same content, delivery methods, and structure for future iterations of this training.</div>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display polarity analysis for specific training
+        function displayTrainingPolarityAnalysis(polarityAnalysis) {
+            const contentDiv = document.getElementById('training-polarity-content');
+            
+            const { overall, sessions, polarizedSessions, totalSessions } = polarityAnalysis;
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Overall Polarity Status for this Training -->
+                    <div class="p-6 rounded-lg ${overall.isPolarized ? 'bg-red-50 border-2 border-red-200' : 'bg-green-50 border-2 border-green-200'}">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-bold ${overall.isPolarized ? 'text-red-800' : 'text-green-800'}">
+                                ${overall.isPolarized ? '⚠️ Polarization Detected in this Training' : '✅ No Polarization Detected in this Training'}
+                            </h4>
+                            <div class="text-2xl">${overall.isPolarized ? '⚠️' : '✅'}</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${overall.poorPercentage > 20 ? 'text-red-600' : 'text-gray-600'}">${overall.poorPercentage}%</div>
+                                <div class="text-sm text-gray-600">Poor Ratings (≤2)</div>
+                                <div class="text-xs text-gray-500">${overall.poorCount} out of ${overall.totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold ${overall.excellentPercentage > 20 ? 'text-green-600' : 'text-gray-600'}">${overall.excellentPercentage}%</div>
+                                <div class="text-sm text-gray-600">Excellent Ratings (≥4)</div>
+                                <div class="text-xs text-gray-500">${overall.excellentCount} out of ${overall.totalRatings}</div>
+                            </div>
+                            <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                                <div class="text-2xl font-bold text-blue-600">${overall.averageRating}</div>
+                                <div class="text-sm text-gray-600">Average Rating</div>
+                                <div class="text-xs text-gray-500">This Training</div>
+                            </div>
+                        </div>
+                        
+                        ${overall.isPolarized ? `
+                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-yellow-800 mb-2">Training Polarization Alert</h5>
+                                <p class="text-sm text-yellow-700">
+                                    This training shows significant divergence in participant experiences. Both poor (${overall.poorPercentage}%) and excellent (${overall.excellentPercentage}%) ratings exceed 20%, indicating mixed participant satisfaction.
+                                </p>
+                            </div>
+                        ` : `
+                            <div class="bg-green-100 border border-green-300 rounded-lg p-4">
+                                <h5 class="font-semibold text-green-800 mb-2">Consistent Training Experience</h5>
+                                <p class="text-sm text-green-700">
+                                    This training delivered consistent experiences across all participants. No significant polarization detected in feedback patterns.
+                                </p>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- Training-Specific Recommendations -->
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                        <h4 class="text-lg font-bold text-blue-800 mb-4">Training-Specific Recommendations</h4>
+                        <div class="space-y-3">
+                            ${overall.isPolarized ? `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Immediate Follow-up Required</div>
+                                        <div class="text-sm text-blue-700">Contact participants who rated poorly to understand specific concerns and areas for improvement.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Content Review</div>
+                                        <div class="text-sm text-blue-700">Review training materials and delivery methods to identify what worked for high raters vs. low raters.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-blue-800">Future Session Adjustments</div>
+                                        <div class="text-sm text-blue-700">Consider offering different difficulty levels or learning paths for future sessions of this training.</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Successful Training Delivery</div>
+                                        <div class="text-sm text-green-700">This training was delivered successfully with consistent participant satisfaction. Use as a model for future sessions.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-green-800">Maintain Current Approach</div>
+                                        <div class="text-sm text-green-700">Continue using the same content, delivery methods, and structure for future iterations of this training.</div>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         // Calculate trainer metrics from feedback data
@@ -1391,6 +1994,29 @@
             const trainingIdUpper = (trainingIdInput.value || '').trim().toUpperCase();
             trainingIdInput.value = trainingIdUpper;
 
+            // Get university details
+            const universityName = document.getElementById('university_name_form').value.trim().toUpperCase();
+            const course = document.getElementById('course_form').value.trim().toUpperCase();
+            const universityTrainingId = document.getElementById('training_id_form').value.trim().toUpperCase();
+
+            // Validate university details
+            try {
+                const validationResponse = await axios.post(`${API_BASE_URL}/validate_university_course`, {
+                    university_name: universityName,
+                    course: course,
+                    training_id: universityTrainingId
+                });
+
+                if (!validationResponse.data.success || !validationResponse.data.valid) {
+                    showErrorModal('Details entered are wrong. Please check your university details and try again.');
+                    return;
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                showErrorModal('Unable to validate university details. Please try again.');
+                return;
+            }
+
             const formData = {
                 training_id: trainingIdUpper,
                 student_name: upperName,
@@ -1398,6 +2024,8 @@
                 trainer_name: document.getElementById('trainer_name').value,
                 training_date_from: document.getElementById('training_date_from').value,
                 training_date_to: document.getElementById('training_date_to').value,
+                university_name: universityName,
+                course: course,
                 quantitative: {
                     content_quality: parseInt(document.getElementById('content_quality').value),
                     trainer_effectiveness: parseInt(document.getElementById('trainer_effectiveness').value),
@@ -1431,16 +2059,16 @@
                 const response = await axios.post(`${API_BASE_URL}/submit_feedback`, formData);
                 
                 if (response.data.success) {
-                    showStatus('form-status', 'success', 'Feedback submitted successfully!');
+                    showSuccessModal('Feedback submitted successfully!');
                     document.getElementById('feedback-form').reset();
                 } else {
                     const msg = response.data.message || 'Submission failed';
-                    showStatus('form-status', 'error', msg);
+                    showErrorModal(msg);
                 }
             } catch (error) {
                 const resp = error && error.response && error.response.data;
                 const msg = (resp && resp.message) ? resp.message : ('Error submitting feedback: ' + error.message);
-                showStatus('form-status', 'error', msg);
+                showErrorModal(msg);
             }
         });
 
@@ -1746,8 +2374,19 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Polarity Analysis Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Polarity Analysis</h3>
+                        <div id="training-polarity-content">
+                            <!-- Polarity content will be populated here -->
+                        </div>
+                    </div>
                 </div>
             `;
+            
+            // Display polarity analysis from backend data
+            displayTrainingPolarityAnalysisFromBackend(data);
             
             resultsDiv.classList.remove('hidden');
             } catch (error) {
@@ -1777,14 +2416,32 @@
                     sessionStorage.setItem('currentTrainingId', trainingId);
                     displayStudentFeedback(response.data.data);
                     
-                    // Enable download button
+                    // Enable download and delete buttons
                     document.getElementById('download-excel-btn').disabled = false;
+                    document.getElementById('delete-all-btn').disabled = false;
                 } else {
                     alert('Error: ' + response.data.message);
                 }
             } catch (error) {
                 alert('Error loading student feedback: ' + error.message);
             }
+        }
+
+        // Delete all student feedback for current training
+        async function deleteAllStudentFeedback() {
+            const trainingId = document.getElementById('student_training_id').value.trim();
+            
+            if (!trainingId) {
+                alert('Please enter a Training ID first');
+                return;
+            }
+
+            await deleteTrainingFeedback(trainingId);
+            
+            // Clear the results and disable buttons
+            document.getElementById('student-feedback-results').classList.add('hidden');
+            document.getElementById('download-excel-btn').disabled = true;
+            document.getElementById('delete-all-btn').disabled = true;
         }
 
         // Display student feedback with clickable links
@@ -1811,16 +2468,26 @@
                     const subjectName = feedback.subject_name || 'Not specified';
                     
                     html += `
-                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" 
-                             onclick="showStudentDetails(${index})">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div class="text-center">
-                                <div class="text-lg font-semibold text-blue-600 hover:text-blue-800 underline mb-2">
+                                <div class="text-lg font-semibold text-blue-600 hover:text-blue-800 underline mb-2 cursor-pointer" 
+                                     onclick="showStudentDetails(${index})">
                                     ${studentName}
                                 </div>
                                 <div class="text-sm text-gray-500 mb-1">${feedbackDate}</div>
                                 <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
                                 <div class="text-xs text-gray-500 mt-1">Subject: ${subjectName}</div>
-                                <div class="text-xs text-gray-400 mt-1">Click to view details</div>
+                                <div class="text-xs text-gray-400 mt-1 mb-3">Click name to view details</div>
+                                <div class="flex justify-center space-x-2">
+                                    <button onclick="event.stopPropagation(); showStudentDetails(${index})" 
+                                            class="text-blue-600 hover:text-blue-800 text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded">
+                                        👁️ View
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteSingleFeedback('${feedback._id || feedback.id}', '${feedback.training_id}', '${studentName}')" 
+                                            class="text-red-600 hover:text-red-800 text-xs bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
+                                        🗑️ Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2170,7 +2837,7 @@
             resultsCount.textContent = `Showing ${feedbacks.length} entries`;
             
             if (feedbacks.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No feedback data found</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No feedback data found</td></tr>';
                 return;
             }
             
@@ -2191,11 +2858,263 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${subjectName}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${studentName}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${submissionDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex space-x-2">
+                                <button onclick="deleteSingleFeedback('${feedback._id || feedback.id}', '${trainingId}', '${studentName}')" 
+                                        class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
             
             tableBody.innerHTML = html;
+        }
+
+        // Delete single feedback
+        async function deleteSingleFeedback(feedbackId, trainingId, studentName) {
+            if (!feedbackId || feedbackId === 'undefined') {
+                alert('Error: Invalid feedback ID');
+                return;
+            }
+
+            const confirmMessage = `Are you sure you want to delete feedback for:\nTraining ID: ${trainingId}\nStudent: ${studentName}\n\nThis action cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/admin/delete_feedback`, {
+                    data: { feedback_id: feedbackId },
+                    withCredentials: true
+                });
+
+                if (response.data.success) {
+                    alert('Feedback deleted successfully!');
+                    // Refresh the database data
+                    loadDatabaseData();
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting feedback:', error);
+                alert('Error deleting feedback: ' + error.message);
+            }
+        }
+
+        // Delete all feedback for a training ID
+        async function deleteTrainingFeedback(trainingId) {
+            if (!trainingId) {
+                alert('Error: Training ID is required');
+                return;
+            }
+
+            const confirmMessage = `Are you sure you want to delete ALL feedback for Training ID: ${trainingId}?\n\nThis will permanently delete all feedback records for this training.\nThis action cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/admin/delete_training_feedback`, {
+                    data: { training_id: trainingId },
+                    withCredentials: true
+                });
+
+                if (response.data.success) {
+                    alert(`Successfully deleted ${response.data.deleted_count} feedback records for Training ID: ${trainingId}`);
+                    // Refresh the database data
+                    loadDatabaseData();
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting training feedback:', error);
+                alert('Error deleting training feedback: ' + error.message);
+            }
+        }
+
+        // Bulk delete all feedback for a training ID
+        async function bulkDeleteTraining() {
+            const trainingId = document.getElementById('bulk-delete-training-id').value.trim();
+            
+            if (!trainingId) {
+                alert('Please enter a Training ID');
+                return;
+            }
+
+            await deleteTrainingFeedback(trainingId);
+            
+            // Clear the input field
+            document.getElementById('bulk-delete-training-id').value = '';
+        }
+
+        // University Database Management Functions
+
+        // Load university courses
+        async function loadUniversityCourses() {
+            const loadingElement = document.getElementById('university-loading');
+            const errorElement = document.getElementById('university-error');
+            const contentElement = document.getElementById('university-courses-content');
+            
+            try {
+                loadingElement.classList.remove('hidden');
+                errorElement.classList.add('hidden');
+                
+                const response = await axios.get(`${API_BASE_URL}/admin/university_courses`, { withCredentials: true });
+                
+                if (response.data.success) {
+                    displayUniversityCourses(response.data.data);
+                } else {
+                    throw new Error(response.data.message || 'Failed to load university courses');
+                }
+            } catch (error) {
+                console.error('Error loading university courses:', error);
+                errorElement.classList.remove('hidden');
+                document.getElementById('university-error-message').textContent = 'Error loading university courses: ' + error.message;
+                contentElement.innerHTML = '<div class="text-center text-red-500 py-8">Error loading university courses</div>';
+            } finally {
+                loadingElement.classList.add('hidden');
+            }
+        }
+
+        // Display university courses
+        function displayUniversityCourses(courses) {
+            const contentElement = document.getElementById('university-courses-content');
+            
+            if (courses.length === 0) {
+                contentElement.innerHTML = '<div class="text-center text-gray-500 py-8">No university courses found</div>';
+                return;
+            }
+            
+            // Group courses by university
+            const groupedCourses = {};
+            courses.forEach(course => {
+                const university = course.university_name;
+                if (!groupedCourses[university]) {
+                    groupedCourses[university] = [];
+                }
+                groupedCourses[university].push(course);
+            });
+            
+            let html = '<div class="space-y-6">';
+            
+            Object.keys(groupedCourses).sort().forEach(university => {
+                const universityCourses = groupedCourses[university];
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            🏫 ${university}
+                            <span class="ml-2 text-sm font-normal text-gray-500">(${universityCourses.length} course${universityCourses.length !== 1 ? 's' : ''})</span>
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+                
+                universityCourses.forEach(course => {
+                    const createdDate = course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Unknown';
+                    html += `
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="flex justify-between items-start mb-2">
+                                <h5 class="font-semibold text-gray-800">${course.course}</h5>
+                                <button onclick="deleteUniversityCourse('${course._id}', '${course.university_name}', '${course.course}')" 
+                                        class="text-red-600 hover:text-red-800 text-sm bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">
+                                <strong>Training ID:</strong> ${course.training_id}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                Added: ${createdDate}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            contentElement.innerHTML = html;
+        }
+
+        // Delete university course
+        async function deleteUniversityCourse(courseId, universityName, course) {
+            const confirmMessage = `Are you sure you want to delete this university course?\n\nUniversity: ${universityName}\nCourse: ${course}\n\nThis action cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/admin/university_courses/${courseId}`, { withCredentials: true });
+
+                if (response.data.success) {
+                    alert('University course deleted successfully!');
+                    loadUniversityCourses(); // Refresh the list
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting university course:', error);
+                alert('Error deleting university course: ' + error.message);
+            }
+        }
+
+        // Handle university course form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const universityForm = document.getElementById('university-course-form');
+            if (universityForm) {
+                universityForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const universityName = document.getElementById('university_name').value.trim();
+                    const course = document.getElementById('course').value.trim();
+                    const trainingId = document.getElementById('university_training_id').value.trim();
+                    
+                    if (!universityName || !course || !trainingId) {
+                        showUniversityFormStatus('Please fill in all fields', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await axios.post(`${API_BASE_URL}/admin/university_courses`, {
+                            university_name: universityName,
+                            course: course,
+                            training_id: trainingId
+                        }, { withCredentials: true });
+                        
+                        if (response.data.success) {
+                            showUniversityFormStatus('University course added successfully!', 'success');
+                            universityForm.reset();
+                            loadUniversityCourses(); // Refresh the list
+                        } else {
+                            showUniversityFormStatus('Error: ' + response.data.message, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error adding university course:', error);
+                        showUniversityFormStatus('Error adding university course: ' + error.message, 'error');
+                    }
+                });
+            }
+        });
+
+        // Show university form status
+        function showUniversityFormStatus(message, type) {
+            const statusElement = document.getElementById('university-form-status');
+            const colorClass = type === 'success' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+            statusElement.innerHTML = `<div class="p-3 rounded-md ${colorClass}">${message}</div>`;
+            
+            // Clear status after 5 seconds
+            setTimeout(() => {
+                statusElement.innerHTML = '';
+            }, 5000);
         }
 
         // Check admin status on page load
@@ -2205,6 +3124,71 @@
             setInterval(() => {
                 axios.get(`${API_BASE_URL}/heartbeat`, { withCredentials: true }).catch(() => {});
             }, 60000);
+        });
+    </script>
+
+    <!-- Success/Error Popup Modals -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Success!</h3>
+            <p id="success-message" class="text-gray-600 mb-6">Feedback submitted successfully!</p>
+            <button onclick="closeSuccessModal()" class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Error!</h3>
+            <p id="error-message" class="text-gray-600 mb-6">Details entered are wrong. Please check your university details and try again.</p>
+            <button onclick="closeErrorModal()" class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function showSuccessModal(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        function showErrorModal(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('error-modal').classList.add('hidden');
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('success-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSuccessModal();
+            }
+        });
+
+        document.getElementById('error-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeErrorModal();
+            }
         });
     </script>
 </body>
