@@ -414,6 +414,7 @@
                     <button onclick="loadStudentFeedback()" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">Load Student Feedback</button>
                     <button onclick="downloadExcel()" id="download-excel-btn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Download Excel</button>
                     <button onclick="deleteAllStudentFeedback()" id="delete-all-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>🗑️ Delete All</button>
+                    <button onclick="deletePolarizedFeedback()" id="delete-polarized-btn" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>⚠️ Delete Polarized</button>
                 </div>
             </div>
 
@@ -2404,6 +2405,7 @@
                     // Enable download and delete buttons
                     document.getElementById('download-excel-btn').disabled = false;
                     document.getElementById('delete-all-btn').disabled = false;
+                    document.getElementById('delete-polarized-btn').disabled = false;
                 } else {
                     alert('Error: ' + response.data.message);
                 }
@@ -2427,6 +2429,98 @@
             document.getElementById('student-feedback-results').classList.add('hidden');
             document.getElementById('download-excel-btn').disabled = true;
             document.getElementById('delete-all-btn').disabled = true;
+            document.getElementById('delete-polarized-btn').disabled = true;
+        }
+
+        // Delete only polarized feedback
+        async function deletePolarizedFeedback() {
+            const currentFeedbacks = JSON.parse(sessionStorage.getItem('currentFeedbacks') || '[]');
+            
+            if (currentFeedbacks.length === 0) {
+                alert('No feedback data available. Please load feedback first.');
+                return;
+            }
+
+            // Find polarized feedback
+            const polarizedFeedbacks = currentFeedbacks.filter(feedback => {
+                const polarity = calculateIndividualPolarity(feedback);
+                return polarity.isPolarized;
+            });
+
+            if (polarizedFeedbacks.length === 0) {
+                alert('No polarized feedback found to delete.');
+                return;
+            }
+
+            const confirmMessage = `Are you sure you want to delete ${polarizedFeedbacks.length} polarized feedback entries?\n\nThis will permanently delete all feedback with both poor (≤2) and excellent (≥4) ratings > 20%.\nThis action cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            let deletedCount = 0;
+            let errorCount = 0;
+
+            // Delete each polarized feedback
+            for (const feedback of polarizedFeedbacks) {
+                try {
+                    const response = await axios.delete(`${API_BASE_URL}/admin/delete_feedback`, {
+                        data: { feedback_id: feedback._id || feedback.id },
+                        withCredentials: true
+                    });
+
+                    if (response.data.success) {
+                        deletedCount++;
+                    } else {
+                        errorCount++;
+                        console.error('Error deleting feedback:', response.data.message);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error('Error deleting feedback:', error);
+                }
+            }
+
+            if (deletedCount > 0) {
+                alert(`Successfully deleted ${deletedCount} polarized feedback entries${errorCount > 0 ? ` (${errorCount} errors occurred)` : ''}.`);
+                loadStudentFeedback(); // Refresh the list
+            } else {
+                alert('Failed to delete polarized feedback. Please try again.');
+            }
+        }
+
+        // Calculate polarity for individual feedback entry
+        function calculateIndividualPolarity(feedback) {
+            if (!feedback.quantitative) {
+                return { isPolarized: false, reason: 'No quantitative data' };
+            }
+            
+            const ratings = Object.values(feedback.quantitative).filter(val => typeof val === 'number' && val >= 1 && val <= 5);
+            
+            if (ratings.length === 0) {
+                return { isPolarized: false, reason: 'No valid ratings' };
+            }
+            
+            const poorCount = ratings.filter(rating => rating <= 2).length;
+            const excellentCount = ratings.filter(rating => rating >= 4).length;
+            const totalCount = ratings.length;
+            
+            const poorPercentage = (poorCount / totalCount) * 100;
+            const excellentPercentage = (excellentCount / totalCount) * 100;
+            
+            const isPolarized = poorPercentage > 20 && excellentPercentage > 20;
+            
+            return {
+                isPolarized: isPolarized,
+                poorPercentage: poorPercentage,
+                excellentPercentage: excellentPercentage,
+                poorCount: poorCount,
+                excellentCount: excellentCount,
+                totalCount: totalCount,
+                reason: isPolarized ? 
+                    `Polarized: ${poorPercentage.toFixed(1)}% poor (≤2), ${excellentPercentage.toFixed(1)}% excellent (≥4)` :
+                    `Not polarized: ${poorPercentage.toFixed(1)}% poor, ${excellentPercentage.toFixed(1)}% excellent`
+            };
         }
 
         // Display student feedback with clickable links
@@ -2437,12 +2531,60 @@
             if (feedbacks.length === 0) {
                 contentDiv.innerHTML = '<div class="text-center text-gray-500 py-8">No feedback found for this training ID</div>';
             } else {
+                // Calculate overall polarity statistics
+                let polarizedCount = 0;
+                let lowRatingCount = 0;
+                let highRatingCount = 0;
+                let normalCount = 0;
+                
+                feedbacks.forEach(feedback => {
+                    const polarity = calculateIndividualPolarity(feedback);
+                    if (polarity.isPolarized) {
+                        polarizedCount++;
+                    } else if (polarity.poorPercentage > 30) {
+                        lowRatingCount++;
+                    } else if (polarity.excellentPercentage > 70) {
+                        highRatingCount++;
+                    } else {
+                        normalCount++;
+                    }
+                });
+                
                 let html = `
                     <div class="space-y-4">
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <h3 class="font-semibold text-blue-800 mb-2">Click on any student name to view their detailed feedback</h3>
                             <p class="text-sm text-blue-600">Total ${feedbacks.length} students have submitted feedback</p>
                         </div>
+                        
+                        <!-- Polarity Summary -->
+                        <div class="bg-gray-50 p-4 rounded-lg border">
+                            <h4 class="font-semibold text-gray-800 mb-3">Feedback Polarity Summary</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+                                    <span class="text-gray-700">Polarized: <strong class="text-red-600">${polarizedCount}</strong></span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></div>
+                                    <span class="text-gray-700">Low Ratings: <strong class="text-orange-600">${lowRatingCount}</strong></span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                                    <span class="text-gray-700">High Ratings: <strong class="text-green-600">${highRatingCount}</strong></span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
+                                    <span class="text-gray-700">Normal: <strong class="text-gray-600">${normalCount}</strong></span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">
+                                <strong>Polarized:</strong> Both poor (≤2) and excellent (≥4) ratings > 20% | 
+                                <strong>Low Ratings:</strong> Poor ratings > 30% | 
+                                <strong>High Ratings:</strong> Excellent ratings > 70%
+                            </p>
+                        </div>
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 `;
                 
@@ -2452,8 +2594,44 @@
                     const trainerName = feedback.trainer_name || 'Not specified';
                     const subjectName = feedback.subject_name || 'Not specified';
                     
+                    // Calculate polarity for this feedback
+                    const polarity = calculateIndividualPolarity(feedback);
+                    
+                    // Determine color coding based on polarity
+                    let borderColor = 'border-gray-200';
+                    let bgColor = 'bg-white';
+                    let polarityBadge = '';
+                    
+                    if (polarity.isPolarized) {
+                        borderColor = 'border-red-300';
+                        bgColor = 'bg-red-50';
+                        polarityBadge = `
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mb-2">
+                                ⚠️ Polarized
+                            </div>
+                        `;
+                    } else if (polarity.poorPercentage > 30) {
+                        borderColor = 'border-orange-300';
+                        bgColor = 'bg-orange-50';
+                        polarityBadge = `
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 mb-2">
+                                📉 Low Ratings
+                            </div>
+                        `;
+                    } else if (polarity.excellentPercentage > 70) {
+                        borderColor = 'border-green-300';
+                        bgColor = 'bg-green-50';
+                        polarityBadge = `
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
+                                📈 High Ratings
+                            </div>
+                        `;
+                    }
+                    
                     html += `
-                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="border-2 ${borderColor} ${bgColor} rounded-lg p-4 hover:shadow-md transition-shadow relative" 
+                             title="${polarity.reason}">
+                            ${polarityBadge}
                             <div class="text-center">
                                 <div class="text-lg font-semibold text-blue-600 hover:text-blue-800 underline mb-2 cursor-pointer" 
                                      onclick="showStudentDetails(${index})">
@@ -2463,6 +2641,15 @@
                                 <div class="text-xs text-gray-400">Trainer: ${trainerName}</div>
                                 <div class="text-xs text-gray-500 mt-1">Subject: ${subjectName}</div>
                                 <div class="text-xs text-gray-400 mt-1 mb-3">Click name to view details</div>
+                                
+                                <!-- Polarity Stats -->
+                                <div class="text-xs text-gray-600 mb-3 p-2 bg-gray-100 rounded">
+                                    <div class="flex justify-between">
+                                        <span>Poor (≤2): ${polarity.poorCount}/${polarity.totalCount}</span>
+                                        <span>Excellent (≥4): ${polarity.excellentCount}/${polarity.totalCount}</span>
+                                    </div>
+                                </div>
+                                
                                 <div class="flex justify-center space-x-2">
                                     <button onclick="event.stopPropagation(); showStudentDetails(${index})" 
                                             class="text-blue-600 hover:text-blue-800 text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded">
