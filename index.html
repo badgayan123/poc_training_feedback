@@ -36,7 +36,7 @@
                 <button onclick="showSection('admin')" id="admin-btn" class="px-6 py-2 rounded-md bg-red-500 text-white font-medium ml-2">Admin Login</button>
                 <button onclick="showSection('users')" id="users-btn" class="px-6 py-2 rounded-md bg-indigo-500 text-white font-medium ml-2 hidden">User Dashboard</button>
                 <button onclick="showSection('database')" id="database-btn" class="px-6 py-2 rounded-md bg-teal-500 text-white font-medium ml-2 hidden">Database Dashboard</button>
-                <button onclick="showSection('university')" id="university-btn" class="px-6 py-2 rounded-md bg-yellow-500 text-white font-medium ml-2 hidden">University Database</button>
+                <button onclick="showSection('university')" id="university-btn" class="px-6 py-2 rounded-md bg-yellow-500 text-white font-medium ml-2 hidden">University/College Database</button>
             </div>
         </div>
 
@@ -76,13 +76,13 @@
                     <p class="text-xs text-gray-500 mt-1">Enter name in CAPITAL letters only.</p>
                 </div>
                 
-                <!-- University Details -->
+                <!-- University/College Details -->
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-semibold text-yellow-800 mb-4">University Details (Required for Validation)</h3>
+                    <h3 class="text-lg font-semibold text-yellow-800 mb-4">University/College Details (Required for Validation)</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
-                            <input type="text" id="university_name_form" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" style="text-transform: uppercase;" placeholder="Enter university name">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">University/College Name *</label>
+                            <input type="text" id="university_name_form" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" style="text-transform: uppercase;" placeholder="Enter university/college name">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Course Name *</label>
@@ -94,7 +94,7 @@
                         </div>
                     </div>
                     <p class="text-sm text-yellow-700 mt-2">
-                        <strong>Note:</strong> These details must match exactly with the university database for feedback submission to be successful. The course name will be used as the subject name.
+                        <strong>Note:</strong> These details must match exactly with the university/college database for feedback submission to be successful. The course name will be used as the subject name.
                     </p>
                 </div>
                 
@@ -510,18 +510,18 @@
             </div>
         </div>
 
-        <!-- University Database Section (Admin Only) -->
+        <!-- University/College Database Section (Admin Only) -->
         <div id="university-section" class="hidden bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">University Database Management</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">University/College Database Management</h2>
             
-            <!-- Add New University Course -->
+            <!-- Add New University/College Course -->
             <div class="mb-8 p-6 bg-gray-50 rounded-lg">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add New University Course</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add New University/College Course</h3>
                 <form id="university-course-form" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">University Name *</label>
-                            <input type="text" id="university_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Enter university name" style="text-transform: uppercase;">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">University/College Name *</label>
+                            <input type="text" id="university_name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Enter university/college name" style="text-transform: uppercase;">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Course *</label>
@@ -539,10 +539,10 @@
                 <div id="university-form-status" class="mt-4"></div>
             </div>
             
-            <!-- University Courses List -->
+            <!-- University/College Courses List -->
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">University Courses</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">University/College Courses</h3>
                     <button onclick="loadUniversityCourses()" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 font-medium">
                         Refresh
                     </button>
@@ -3158,7 +3158,7 @@
             const contentElement = document.getElementById('university-courses-content');
             
             if (courses.length === 0) {
-                contentElement.innerHTML = '<div class="text-center text-gray-500 py-8">No university courses found</div>';
+                contentElement.innerHTML = '<div class="text-center text-gray-500 py-8">No university/college courses found</div>';
                 return;
             }
             
