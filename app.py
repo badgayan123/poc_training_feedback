@@ -411,7 +411,7 @@ def get_university_courses_admin():
 @app.route('/admin/university_courses', methods=['POST'])
 @require_admin
 def add_university_course():
-    """Add a new university course (Admin only)"""
+    """Add a new university entry (Admin only)"""
     try:
         data = request.get_json()
         
@@ -421,8 +421,8 @@ def add_university_course():
                 'message': 'No JSON data provided'
             }), 400
         
-        # Validate required fields
-        required_fields = ['university_name', 'course', 'training_id']
+        # Validate required fields (course is no longer required)
+        required_fields = ['university_name', 'training_id']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
@@ -430,7 +430,7 @@ def add_university_course():
                     'message': f'{field} is required'
                 }), 400
         
-        # Insert university course
+        # Insert university entry
         result = insert_university_course(data)
         
         if result['success']:
@@ -439,7 +439,7 @@ def add_university_course():
             return jsonify(result), 400
             
     except Exception as e:
-        logger.error(f"Error in add university course: {e}")
+        logger.error(f"Error in add university entry: {e}")
         return jsonify({
             'success': False,
             'message': f'Internal server error: {str(e)}'
@@ -466,7 +466,7 @@ def delete_university_course_admin(course_id):
 
 @app.route('/validate_university_course', methods=['POST'])
 def validate_university_course_endpoint():
-    """Validate university course combination (Public endpoint)"""
+    """Validate university and training ID combination (Public endpoint)"""
     try:
         data = request.get_json()
         
@@ -476,8 +476,8 @@ def validate_university_course_endpoint():
                 'message': 'No JSON data provided'
             }), 400
         
-        # Validate required fields
-        required_fields = ['university_name', 'course', 'training_id']
+        # Validate required fields (course is no longer required)
+        required_fields = ['university_name', 'training_id']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
@@ -485,10 +485,9 @@ def validate_university_course_endpoint():
                     'message': f'{field} is required'
                 }), 400
         
-        # Validate university course
+        # Validate university and training ID
         result = validate_university_course(
             data['university_name'],
-            data['course'],
             data['training_id']
         )
         

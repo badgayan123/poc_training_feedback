@@ -323,21 +323,21 @@ def delete_feedback_by_training_id(training_id):
 
 def insert_university_course(university_data):
     """
-    Insert university course data into MongoDB
+    Insert university data into MongoDB
     
     Args:
-        university_data (dict): University course data to insert
+        university_data (dict): University data to insert
         
     Returns:
         dict: Result with success status and inserted_id or error message
     """
     try:
         if db_manager.collection is None:
-            logger.warning("Database offline - simulating university course insertion")
+            logger.warning("Database offline - simulating university insertion")
             return {"success": True, "inserted_id": "simulated_id", "message": "Offline mode - data not saved"}
         
-        # Validate required fields
-        required_fields = ['university_name', 'course', 'training_id']
+        # Validate required fields (course is no longer required)
+        required_fields = ['university_name', 'training_id']
         for field in required_fields:
             if not university_data.get(field):
                 return {
@@ -347,20 +347,19 @@ def insert_university_course(university_data):
         
         # Normalize data
         university_data['university_name'] = university_data['university_name'].strip().upper()
-        university_data['course'] = university_data['course'].strip().upper()
         university_data['training_id'] = university_data['training_id'].strip().upper()
         
-        # Check for duplicates
+        # Check for duplicates (only university and training ID)
         existing = db_manager.collection.find_one({
             'university_name': university_data['university_name'],
-            'course': university_data['course'],
-            'training_id': university_data['training_id']
+            'training_id': university_data['training_id'],
+            'type': 'university_course'
         })
         
         if existing:
             return {
                 'success': False,
-                'message': 'This university course combination already exists'
+                'message': 'This university and training ID combination already exists'
             }
         
         # Add metadata
@@ -370,17 +369,17 @@ def insert_university_course(university_data):
         # Insert the document
         result = db_manager.collection.insert_one(university_data)
         
-        logger.info(f"University course inserted with ID: {result.inserted_id}")
+        logger.info(f"University entry inserted with ID: {result.inserted_id}")
         return {
             'success': True,
-            'message': 'University course added successfully',
+            'message': 'University added successfully',
             'inserted_id': str(result.inserted_id)
         }
     except Exception as e:
-        logger.error(f"Error inserting university course: {e}")
+        logger.error(f"Error inserting university: {e}")
         return {
             'success': False,
-            'message': f'Failed to insert university course: {str(e)}'
+            'message': f'Failed to insert university: {str(e)}'
         }
 
 def get_university_courses():
@@ -477,13 +476,12 @@ def delete_university_course(course_id):
             'message': f'Failed to delete university course: {str(e)}'
         }
 
-def validate_university_course(university_name, course, training_id):
+def validate_university_course(university_name, training_id):
     """
-    Validate if a university course combination exists
+    Validate if a university and training ID combination exists
     
     Args:
         university_name (str): University name to validate
-        course (str): Course to validate
         training_id (str): Training ID to validate
         
     Returns:
@@ -491,18 +489,16 @@ def validate_university_course(university_name, course, training_id):
     """
     try:
         if db_manager.collection is None:
-            logger.warning("Database offline - simulating university course validation")
+            logger.warning("Database offline - simulating university validation")
             return {"success": True, "valid": True, "message": "Offline mode - validation simulated"}
         
         # Normalize input data
         university_name = university_name.strip().upper()
-        course = course.strip().upper()
         training_id = training_id.strip().upper()
         
-        # Check if combination exists
+        # Check if combination exists (only university and training ID)
         existing = db_manager.collection.find_one({
             'university_name': university_name,
-            'course': course,
             'training_id': training_id,
             'type': 'university_course'
         })
@@ -511,17 +507,17 @@ def validate_university_course(university_name, course, training_id):
             return {
                 'success': True,
                 'valid': True,
-                'message': 'University course combination is valid'
+                'message': 'University and training ID combination is valid'
             }
         else:
             return {
                 'success': True,
                 'valid': False,
-                'message': 'University course combination not found'
+                'message': 'University and training ID combination not found'
             }
             
     except Exception as e:
-        logger.error(f"Error validating university course: {e}")
+        logger.error(f"Error validating university: {e}")
         return {
             'success': False,
             'valid': False,
