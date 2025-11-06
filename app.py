@@ -10,6 +10,9 @@ import json
 import os
 import requests
 from datetime import datetime, timedelta
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +101,99 @@ def heartbeat():
         return jsonify({"success": True, "ts": datetime.utcnow().isoformat()}), 200
     except Exception:
         return jsonify({"success": False}), 200
+
+def send_trainer_notification(trainer_name, student_name, course_name, from_date):
+    """
+    Send email notification to trainer when feedback is submitted
+    
+    Args:
+        trainer_name: Name of the trainer
+        student_name: Name of the student who submitted feedback
+        course_name: Name of the course/subject
+        from_date: Training start date
+    
+    Returns:
+        dict: {'success': bool, 'message': str}
+    """
+    try:
+        # Get trainer email from configuration
+        trainer_email = Config.TRAINER_EMAILS.get(trainer_name)
+        
+        if not trainer_email:
+            logger.warning(f"No email found for trainer: {trainer_name}")
+            return {
+                'success': False,
+                'message': f'No email configured for trainer: {trainer_name}'
+            }
+        
+        # Check if email configuration is available
+        if not Config.EMAIL_USERNAME or not Config.EMAIL_PASSWORD:
+            logger.warning("Email credentials not configured. Skipping email notification.")
+            return {
+                'success': False,
+                'message': 'Email service not configured'
+            }
+        
+        # Format the date for display
+        try:
+            if from_date:
+                # Try to parse and format the date
+                if isinstance(from_date, str):
+                    # Try different date formats
+                    date_formats = ['%Y-%m-%d', '%d-%m-%Y', '%Y/%m/%d', '%d/%m/%Y']
+                    formatted_date = from_date
+                    for fmt in date_formats:
+                        try:
+                            dt = datetime.strptime(from_date, fmt)
+                            formatted_date = dt.strftime('%B %d, %Y')
+                            break
+                        except ValueError:
+                            continue
+                else:
+                    formatted_date = str(from_date)
+            else:
+                formatted_date = 'N/A'
+        except Exception:
+            formatted_date = from_date if from_date else 'N/A'
+        
+        # Create email message
+        msg = MIMEMultipart()
+        msg['From'] = Config.EMAIL_FROM or Config.EMAIL_USERNAME
+        msg['To'] = trainer_email
+        msg['Subject'] = f'New Feedback Submission - {course_name}'
+        
+        # Email body - format as requested: "{Student name} has submitted a feedback for {course name} on {from date}"
+        body = f"{student_name} has submitted a feedback for {course_name} on {formatted_date}."
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        try:
+            server = smtplib.SMTP(Config.SMTP_SERVER, Config.SMTP_PORT)
+            server.starttls()
+            server.login(Config.EMAIL_USERNAME, Config.EMAIL_PASSWORD)
+            text = msg.as_string()
+            server.sendmail(Config.EMAIL_FROM or Config.EMAIL_USERNAME, trainer_email, text)
+            server.quit()
+            
+            logger.info(f"Email notification sent successfully to {trainer_email} for trainer {trainer_name}")
+            return {
+                'success': True,
+                'message': f'Email notification sent to {trainer_email}'
+            }
+        except Exception as e:
+            logger.error(f"Error sending email: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Failed to send email: {str(e)}'
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in send_trainer_notification: {str(e)}")
+        return {
+            'success': False,
+            'message': f'Email notification error: {str(e)}'
+        }
 
 def validate_feedback_data(data):
     """Simple validation for feedback data"""
@@ -586,6 +682,26 @@ def submit_feedback():
         result = insert_feedback(feedback_data)
         
         if result['success']:
+            # Send email notification to trainer
+            trainer_name = feedback_data.get('trainer_name')
+            student_name = feedback_data.get('student_name', 'Anonymous')
+            course_name = feedback_data.get('subject_name', 'N/A')
+            from_date = feedback_data.get('training_date_from')
+            
+            if trainer_name:
+                email_result = send_trainer_notification(
+                    trainer_name=trainer_name,
+                    student_name=student_name,
+                    course_name=course_name,
+                    from_date=from_date
+                )
+                if email_result['success']:
+                    logger.info(f"Email notification sent for feedback submission by {student_name}")
+                else:
+                    logger.warning(f"Email notification failed: {email_result['message']}")
+            else:
+                logger.warning("No trainer name provided, skipping email notification")
+            
             response = result.copy()
             if validation_result['warnings']:
                 response['warnings'] = validation_result['warnings']

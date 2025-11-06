@@ -20,3 +20,16 @@ class Config:
     # Admin Configuration
     ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+    
+    # Email Configuration
+    SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+    SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+    EMAIL_USERNAME = os.getenv('EMAIL_USERNAME')
+    EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+    EMAIL_FROM = os.getenv('EMAIL_FROM', EMAIL_USERNAME)
+    
+    # Trainer Email Mapping
+    TRAINER_EMAILS = {
+        'Ayushman Ghosh': 'ayushman.g99@gmail.com',
+        'Nitesh Dhar Badgayan': 'nitesh.badgayan@gmail.com'
+    }
