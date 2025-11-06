@@ -35,7 +35,7 @@ class Config:
         'Snehasis Guha': 'snehasis.guha@example.com',  # TODO: Replace with actual email
         'Nitesh Dhar Badgayan': 'nitesh.badgayan@gmail.com',
         'Jagadish GS': 'jagadishgurushankar@gmail.com',
-        'Shalini Kanagasabhapathy': 'shalini.kanagasabhapathy@example.com',  # TODO: Replace with actual email
+        'Shalini Kanagasabhapathy': 'shalece12k@gmail.com',
         'Rajeev Anwar': 'anwar.rajeev02@gmail.com',
         'Devang Sareen': 'sareendev1812@gmail.com',
         'Mohan Reddy': 'mk4977275@gmail.com',
